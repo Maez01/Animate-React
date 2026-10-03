@@ -3,7 +3,7 @@
     padding: 0;
     box-sizing: border-box;
 }
-.fondo-login{
+.fondo-login, .fondo-perfil{
     background-image: url('../assets/imagenes/fondo-celeste.avif');
     background-size: cover;
     background-position: center;
@@ -85,4 +85,18 @@
     height: 60px;
     border-radius: 50%;
     margin: 0 auto 5px;
+}
+
+
+/* ---------- Perfil de usuario ---------- */
+.perfil-card {
+    max-width: 700px;
+    margin: 0 auto;
+    background: #24303c;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 20px;
+    font-family: 'calibri';
+    box-shadow: 7px 13px 37px #d1caca;
 }
