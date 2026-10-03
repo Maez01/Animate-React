@@ -80,3 +80,8 @@ export function buscarUsuario(correo, contrasenia) {
     );
     return usuario || null;
 }
+
+export function obtenerUsuario() {
+    const sesion = obtenerSesion();
+    return sesion ? sesion : null;
+}
