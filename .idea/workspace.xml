@@ -4,15 +4,45 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="60985dee-3aaf-46f4-a308-da8e0818fa6f" name="Changes" comment="" />
+    <list default="true" id="60985dee-3aaf-46f4-a308-da8e0818fa6f" name="Changes" comment="Se agregan las carpetas de imagenes, videos e iconos, ademas se agregan algunos Components vacios y data vacia y se inicia trabajo en la pagina de inicio de la tienda" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 0
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="main" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "Maez01"
+  }
 }]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/Maez01/Animate-React.git",
+    "accountId": "01f33995-e967-442c-8876-ef4cbc2f3e4e"
+  },
+  "recentNewPullRequestHead": {
+    "server": {
+      "useHttp": false,
+      "host": "github.com",
+      "port": null,
+      "suffix": null
+    },
+    "owner": "Maez01",
+    "repository": "Animate-React"
+  }
+}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
   <component name="ProjectId" id="3K6l5zPj4jbHtj8GsioxUuVeJ1D" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -21,6 +51,8 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "Manuel",
     "kotlin-language-version-configured": "true"
   }
 }]]></component>
@@ -32,6 +64,19 @@
       <option name="presentableId" value="Default" />
       <updated>1790885721069</updated>
     </task>
+    <task id="LOCAL-00001" summary="Se agregan las carpetas de imagenes, videos e iconos, ademas se agregan algunos Components vacios y data vacia y se inicia trabajo en la pagina de inicio de la tienda">
+      <option name="closed" value="true" />
+      <created>1791406340381</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1791406340381</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Se agregan las carpetas de imagenes, videos e iconos, ademas se agregan algunos Components vacios y data vacia y se inicia trabajo en la pagina de inicio de la tienda" />
+    <option name="LAST_COMMIT_MESSAGE" value="Se agregan las carpetas de imagenes, videos e iconos, ademas se agregan algunos Components vacios y data vacia y se inicia trabajo en la pagina de inicio de la tienda" />
   </component>
 </project>
