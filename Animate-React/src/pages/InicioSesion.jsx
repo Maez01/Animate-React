@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import CampoFormulario from "../components/CampoFormulario";
 import { buscarUsuario, guardarSesion } from "../utils/usuarios";
-import logoCircular from "../assets/imagenes/logo-circular.png";
+
+// Ruta a la imagen dentro de public/ (Vite la sirve desde la raíz "/")
+const logoCircular = "/Imagenes/logo.jpg";
 
 function InicioSesion() {
     const navigate = useNavigate();
