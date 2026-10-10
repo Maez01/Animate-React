@@ -100,3 +100,10 @@
     font-family: 'calibri';
     box-shadow: 7px 13px 37px #d1caca;
 }
+.perfil-modal {
+    background: #24303c;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: 'calibri';
+}
