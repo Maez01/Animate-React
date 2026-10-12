@@ -1,9 +1,9 @@
 const usuariosBase = [
     { nombre: "Ana", apellido: "Gonzales", correo: "ana@email.com", contrasenia: "admin123", rol: "Admin" },
-    { nombre: "Carlos", apellido: "Calderon", correo: "carlos@email.com", contrasenia: "laraña", rol: "Usuario" },
+    { nombre: "Carlos", apellido: "Calderon", correo: "carlos@email.com", contrasenia: "laraña", rol: "Usuario"},
 ];
 
-const REGISTRADOS_KEY = "usuariosRegistrados";
+const USUARIOS_KEY = "usuarios";
 const SESION_KEY = "usuarioActual";
 
 // Solo letras y espacios (incluye tildes y ñ)
@@ -12,19 +12,15 @@ export const soloLetras = /^[A-Za-zÁÉÍÓÚÑáéíóúñ\s]+$/;
 export const formatoCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 
-// ---------- Usuarios registrados (sessionStorage) ----------
-export function cargarUsuariosRegistrados() {
-    const guardado = sessionStorage.getItem(REGISTRADOS_KEY);
-    return guardado ? JSON.parse(guardado) : [];
-}
+/// ---------- Lista de usuarios (sessionStorage) ----------
+ export function obtenerTodosUsuarios() {
+     const guardado = sessionStorage.getItem(USUARIOS_KEY);
+     return guardado ? JSON.parse(guardado) : [...usuariosBase];
+ }
 
-export function guardarUsuariosRegistrados(lista) {
-    sessionStorage.setItem(REGISTRADOS_KEY, JSON.stringify(lista));
-}
-
-export function obtenerTodosUsuarios() {
-    return usuariosBase.concat(cargarUsuariosRegistrados());
-}
+ function guardarTodosUsuarios(lista) {
+     sessionStorage.setItem(USUARIOS_KEY, JSON.stringify(lista));
+ }
 
 // ---------- Sesión ----------
 export function guardarSesion(usuario) {
@@ -68,9 +64,20 @@ export function validarRegistro(datos, todos) {
 
 // ---------- Registrar----------
 export function registrarUsuario(datos) {
-    const lista = cargarUsuariosRegistrados();
+    const lista = obtenerTodosUsuarios();
     lista.push({ ...datos, rol: "Usuario" });
-    guardarUsuariosRegistrados(lista);
+    guardarTodosUsuarios(lista);
+}
+
+// ---------- Editar perfil ----------
+export function actualizarUsuario(correoActual, nuevosDatos) {
+    const lista = obtenerTodosUsuarios().map(u =>
+        u.correo.toLowerCase() === correoActual.toLowerCase() ? { ...u, ...nuevosDatos } : u
+    );
+    guardarTodosUsuarios(lista);
+
+    const actualizado = lista.find(u => u.correo.toLowerCase() === nuevosDatos.correo.toLowerCase());
+    guardarSesion(actualizado);
 }
 
 // ---------- Login ----------
