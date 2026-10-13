@@ -12,7 +12,7 @@ const GENEROS = [
     { valor: "isekai", texto: "Isekai" },
 ];
 
-function FiltrosCatalogo({ filtros, alCambiar }) {
+function FiltrosMangas({ filtros, alCambiar }) {
     return (
         <Container className="bg-white p-4 rounded shadow-sm mb-4">
             <Row className="g-3 align-items-center">
@@ -49,4 +49,4 @@ function FiltrosCatalogo({ filtros, alCambiar }) {
     );
 }
 
-export default FiltrosCatalogo;
+export default FiltrosMangas;
