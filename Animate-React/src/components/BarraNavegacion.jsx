@@ -1,13 +1,13 @@
 import {Link} from "react-router-dom";
 import {Navbar, Nav, NavDropdown, Container} from "react-bootstrap";
 import {obtenerSesion} from "../utils/usuarios";
+import { useCarrito } from "../context/carritoContext";
 
 function BarraNavegacion(){
     const sesion = obtenerSesion();
     const esAdmin = sesion !== null && sesion.rol ==="Admin";
 
-    const carrito = JSON.parse(localStorage.getItem("carritoAnimate") || "[]");
-    const cantidadCarrito = carrito.reduce((total,item) => total + item.cantidad, 0);
+    const { cantidadTotal: cantidadCarrito } = useCarrito();
 
     return(
         <Navbar expand="lg" className="bg-body-tertiary">
