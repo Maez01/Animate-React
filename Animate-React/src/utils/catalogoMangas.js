@@ -23,3 +23,14 @@ export function obtenerVolumen(mangaId, tomo) {
     if (!manga) return null;
     return manga.volumenes.find(v => v.tomo === tomo) ?? null;
 }
+
+// Resta del stock de un tomo la cantidad comprada.
+export function descontarStockTomo(mangaId, tomo, cantidad) {
+    const catalogo = obtenerCatalogoCompleto();
+    const manga = catalogo.find(m => m.id === mangaId);
+    const volumen = manga?.volumenes.find(v => v.tomo === tomo);
+    if (!volumen) return;
+
+    volumen.stock = Math.max(0, volumen.stock - cantidad);
+    guardarCatalogo(catalogo);
+}

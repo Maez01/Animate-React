@@ -1,0 +1,28 @@
+import { obtenerVolumen, descontarStockTomo } from "./catalogoMangas";
+
+// Devuelve el stock disponible de un producto del carrito, según su tipo.
+export function obtenerStock(item) {
+    switch (item.tipo) {
+        case "manga": {
+            const volumen = obtenerVolumen(item.productoId, item.tomo);
+            return volumen ? volumen.stock : 0;
+        }
+        // case "figura": se agrega cuando exista su catálogo con stock
+        default:
+            return 0;
+    }
+}
+
+// Resta del stock lo comprado, producto por producto, según su tipo.
+export function descontarStock(carrito) {
+    carrito.forEach(item => {
+        switch (item.tipo) {
+            case "manga":
+                descontarStockTomo(item.productoId, item.tomo, item.cantidad);
+                break;
+            // case "figura": se agrega cuando exista su catálogo con stock
+            default:
+                break;
+        }
+    });
+}
