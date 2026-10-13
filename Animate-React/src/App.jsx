@@ -8,6 +8,7 @@ import Merchandaising from "./pages/Merchandaising";
 import Tecnologia from "./pages/Tecnologia";
 import Preventas from "./pages/Preventas";
 import Mangas from "./pages/Mangas";
+import Carrito from "./pages/Carrito";
 
 function App() {
     return (
@@ -23,6 +24,7 @@ function App() {
                 <Route path="/registro" element={<Registro />} />
                 <Route path="/admin" element={<h1>Panel admin (pendiente)</h1>} />
                 <Route path="/perfil" element={<Perfil />} />
+                <Route path="/carrito" element={<Carrito />} />
             </Routes>
         </BrowserRouter>
     );

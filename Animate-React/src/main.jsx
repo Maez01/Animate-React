@@ -4,9 +4,12 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import './styles/estilos.css'
 import './styles/formularios.css'
 import App from './App.jsx'
+import CarritoProvider from './context/CarritoProvider.jsx'
 
 createRoot(document.getElementById('root')).render(
     <StrictMode>
-        <App />
+        <CarritoProvider>
+            <App />
+        </CarritoProvider>
     </StrictMode>,
 )

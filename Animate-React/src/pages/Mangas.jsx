@@ -8,6 +8,8 @@ import TarjetaManga from "../components/TarjetaManga";
 import ModalVolumenes from "../components/ModalVolumenes";
 import { obtenerCatalogoCompleto } from "../utils/catalogoMangas";
 import { filtrarMangas } from "../utils/filtrarMangas";
+import { useCarrito } from "../context/carritoContext";
+import { crearClave } from "../utils/carrito";
 
 function Mangas() {
     const [parametros] = useSearchParams();
@@ -29,10 +31,18 @@ function Mangas() {
         setFiltros(anterior => ({ ...anterior, [campo]: valor }));
     }
 
-    // TEMPORAL: funcion test
+    const { agregar } = useCarrito();
+
     function comprarTomo(manga, volumen) {
-        console.log("Agregar al carrito:", manga.titulo, "- tomo", volumen.tomo);
-        return true;
+        return agregar({
+            clave: crearClave("manga", manga.id, volumen.tomo),
+            tipo: "manga",
+            productoId: manga.id,
+            tomo: volumen.tomo,
+            nombre: `${manga.titulo} - Tomo ${volumen.tomo}`,
+            precio: volumen.precio,
+            img: volumen.img,
+        });
     }
 
     const mangasVisibles = filtrarMangas(catalogo, filtros);
