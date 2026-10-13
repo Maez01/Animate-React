@@ -2,7 +2,7 @@ import { Card, Badge, Button } from "react-bootstrap";
 
 function TarjetaManga({ manga, alVerVolumenes }) {
     return (
-        <Card className="card-manga h-100 shadow border-0">
+        <Card className="card-producto h-100 shadow border-0">
             <Card.Img
                 variant="top"
                 src={manga.imgPortada}

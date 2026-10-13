@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Card, Badge, Button } from "react-bootstrap";
-import { formatearPrecio } from "../utils/carrito";
+import { formatearPrecio } from "../utils/formatoPrecio";
 
 function TarjetaTomo({ volumen, alComprar }) {
     const [agregado, setAgregado] = useState(false);

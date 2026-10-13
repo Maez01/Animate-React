@@ -1,6 +1,3 @@
-export function formatearPrecio(valor) {
-    return "$" + valor.toLocaleString("es-CL");
-}
 
 // Crea la clave única de un producto en el carrito.
 // Ej: manga 1 tomo 2 -> "manga-1-2"; figura 3 -> "figura-3"
