@@ -16,9 +16,9 @@ function BarraNavegacion(){
                 <Navbar.Brand as ={Link} to="/" className="dw-bold">Animate Ltda.</Navbar.Brand>
 
                 <Navbar.Toggle aria-controls = "menu-principal"/>
-                <Navbar.Collapse id="menu-principal"/>
+                <Navbar.Collapse id="menu-principal">
 
-                <Nav className="ms-auto mb-2 mb-lg-0">
+                <Nav className="me-auto mb-2 mb-lg-0">
                     <NavDropdown title="Categorias">
                         <NavDropdown.Item as={Link} to="/mangas">Mangas</NavDropdown.Item>
                         <NavDropdown.Item as={Link} to="/figuras">Figuras</NavDropdown.Item>
@@ -41,6 +41,7 @@ function BarraNavegacion(){
                         <Nav.Link as={Link} to="/admin" className="fw-bold text-danger">Panel Admin</Nav.Link>
                     )}
                 </Nav>
+                </Navbar.Collapse>
             </Container>
         </Navbar>
     )
