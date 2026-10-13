@@ -10,7 +10,7 @@ function FilaCategoria({titulo, ruta, productos}) {
         <div className="contenedorProductos">
             {productos.map(producto => (
                 <Link key={producto.imagen} to={producto.enlace || ruta}>
-                    <img src={producto.imagen} className="imagenpequena my-4" alt={titulo}/>
+                    <img src={producto.imagen} className="imagenPequena my-4" alt={titulo}/>
                 </Link>
             ))}
         </div>
