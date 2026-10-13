@@ -18,7 +18,7 @@ function BarraNavegacion(){
                 <Navbar.Toggle aria-controls = "menu-principal"/>
                 <Navbar.Collapse id="menu-principal"/>
 
-                <Nav className="me-auto mb-2 mb-lg-0">
+                <Nav className="ms-auto mb-2 mb-lg-0">
                     <NavDropdown title="Categorias">
                         <NavDropdown.Item as={Link} to="/mangas">Mangas</NavDropdown.Item>
                         <NavDropdown.Item as={Link} to="/figuras">Figuras</NavDropdown.Item>
@@ -29,7 +29,7 @@ function BarraNavegacion(){
                     <Nav.Link href="#Contacto">Contactanos</Nav.Link>
                 </Nav>
                 <Nav className="align-items-lg-center">
-                    <image src="/Iconos/user_circle.png" className="imagen35x35" alt=""/>
+                    <img src="/Iconos/user_circle.png" className="imagen35x35" alt=""/>
                     <Nav.Link as={Link} to="/login">Inicio sesion</Nav.Link>
 
                     <Nav.Link as={Link} to="/carrito" className="d-flex align-items-center gap-1">
