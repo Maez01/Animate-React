@@ -241,23 +241,23 @@
    ========================================================================= */
 
 /* Transición suave para las tarjetas principales del catálogo */
-.card-manga {
+.card-producto {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     cursor: pointer;
 }
 
 /* Efecto de elevación/zoom en la tarjeta principal al pasar el mouse */
-.card-manga:hover {
+.card-producto:hover {
     transform: translateY(-6px) scale(1.02);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
 }
 
 /* Transición agradable para la vista de las portadas */
-.card-manga .card-img-top {
+.card-producto .card-img-top {
     transition: transform 0.3s ease;
 }
 
-.card-manga:hover .card-img-top {
+.card-producto:hover .card-img-top {
     transform: scale(1.03);
 }
 
