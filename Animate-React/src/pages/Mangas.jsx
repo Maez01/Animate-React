@@ -3,9 +3,10 @@ import { useSearchParams } from "react-router-dom";
 import { Container, Row, Col } from "react-bootstrap";
 import BarraNavegacion from "../components/BarraNavegacion";
 import Footer from "../components/Footer";
-import FiltrosCatalogo from "../components/FiltrosCatalogo";
+import FiltrosMangas from "../components/FiltrosMangas";
 import TarjetaManga from "../components/TarjetaManga";
-import { obtenerCatalogoCompleto } from "../utils/catalogo";
+import ModalVolumenes from "../components/ModalVolumenes";
+import { obtenerCatalogoCompleto } from "../utils/catalogoMangas";
 import { filtrarMangas } from "../utils/filtrarMangas";
 
 function Mangas() {
@@ -18,8 +19,20 @@ function Mangas() {
         orden: "predeterminado",
     });
 
+    // Si la URL trae ?manga=4, el modal parte abierto con ese manga
+    const [mangaSeleccionado, setMangaSeleccionado] = useState(() => {
+        const id = Number(parametros.get("manga"));
+        return catalogo.find(m => m.id === id) ?? null;
+    });
+
     function cambiarFiltro(campo, valor) {
         setFiltros(anterior => ({ ...anterior, [campo]: valor }));
+    }
+
+    // TEMPORAL: funcion test
+    function comprarTomo(manga, volumen) {
+        console.log("Agregar al carrito:", manga.titulo, "- tomo", volumen.tomo);
+        return true;
     }
 
     const mangasVisibles = filtrarMangas(catalogo, filtros);
@@ -30,7 +43,7 @@ function Mangas() {
 
             <h1 className="tituloCategoria text-center py-4">Mangas</h1>
 
-            <FiltrosCatalogo filtros={filtros} alCambiar={cambiarFiltro} />
+            <FiltrosMangas filtros={filtros} alCambiar={cambiarFiltro} />
 
             <Container className="mb-5">
                 {mangasVisibles.length === 0 ? (
@@ -41,15 +54,18 @@ function Mangas() {
                     <Row xs={1} md={3} lg={4} className="g-4">
                         {mangasVisibles.map(manga => (
                             <Col key={manga.id}>
-                                <TarjetaManga
-                                    manga={manga}
-                                    alVerVolumenes={m => console.log("Ver volúmenes de:", m.titulo)}
-                                />
+                                <TarjetaManga manga={manga} alVerVolumenes={setMangaSeleccionado} />
                             </Col>
                         ))}
                     </Row>
                 )}
             </Container>
+
+            <ModalVolumenes
+                manga={mangaSeleccionado}
+                alCerrar={() => setMangaSeleccionado(null)}
+                alComprar={comprarTomo}
+            />
 
             <Footer />
         </div>
