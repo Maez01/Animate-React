@@ -10,6 +10,11 @@ export const baseDatosFiguras = [
         vistas: 850,
         fechaAgregado: "2026-01-05",
         imgPortada: "/Imagenes/Figuras/1e6aa15b949d18a629e9eda3fc969170.webp",
+        galeria:[
+             "/Imagenes/Figuras/40d801637218b0565b817251fedcdce1.webp",
+             "/Imagenes/Figuras/c136a750715c4c2c47bb91ebc376e10b.webp",
+             "/Imagenes/Figuras/dcc4d5a15bf955326bd725d8884323a5.webp"
+        ]
         
     },
     {
@@ -22,6 +27,11 @@ export const baseDatosFiguras = [
         vistas: 650,
         fechaAgregado: "2026-01-05",
         imgPortada: "/Imagenes/Figuras/c14d353dd8fe2cdcf88a81682072cf7b.webp",
+        galeria:[
+            "/Imagenes/Figuras/50ac0160cfe03547c88ff2490a0edf49.webp",
+            "/Imagenes/Figuras/417a222615443e840c0a32eb3a1e38a6.webp",
+            "/Imagenes/Figuras/4319fea488072309aa3055d264bd236c.webp"
+        ]
         
     },
     {
@@ -34,6 +44,11 @@ export const baseDatosFiguras = [
         vistas: 1150,
         fechaAgregado: "2026-01-05",
         imgPortada: "/Imagenes/Figuras/CrimsonWave1.jpg",
+        galeria:[
+            "/Imagenes/Figuras/8rRhAkpHGM961nD5FjYP3EBJaNC4mqVx.webp",
+            "/Imagenes/Figuras/e5B9ch0kSid6tZp4y21VDXARKHwQmfsW.webp",
+            "/Imagenes/Figuras/WUeYp1iERvxfjGhtL0D52VSa4Z9d6MKB.webp"
+        ]
         
     }
 ]

@@ -1,10 +1,12 @@
 import { formatearPrecio } from "../utils/formatoPrecio";
 import { useState } from "react";
-import { Modal } from "react-bootstrap";
+import { Carousel, Modal } from "react-bootstrap";
 
 function TarjetaFigura ({figura}) {
     const sinStock = figura.stock ===0;
     const [verImagen, setVerImagen] = useState(false);
+    const imagenes = figura.galeria || [figura.imgPortada];
+    const variasImagenes = imagenes.length>1;
 
     return(
         <div className="col">
@@ -27,12 +29,18 @@ function TarjetaFigura ({figura}) {
                     </p>
                 </div>
             </div>
-            <Modal show={verImagen} onHide={()=> setVerImagen(false)} size="lg" centered>
-                <Modal.Header closeButton>
+            <Modal show={verImagen} onHide={()=> setVerImagen(false)} size="lg" centered contentClassName="bg-dark text-white">
+                <Modal.Header closeButton closeVariant="white" className="border-secondary">
                     <Modal.Title>{figura.nombre}</Modal.Title>
                 </Modal.Header>
-                <Modal.Body className="text-center">
-                    <img src={figura.imgPortada} alt={figura.nombre} className="img-fluid rounded" style={{maxHeight:"75vh"}} />
+                <Modal.Body>
+                   <Carousel interval={null} controls={variasImagenes} indicators={variasImagenes}>
+                        {imagenes.map((imagen, indice) => (
+                            <Carousel.Item key={imagen}>
+                                <img src = {imagen} alt={`${figura.nombre} - imagen ${indice + 1}`} className="d-block w-100 rounded"  style={{height:"70vh", objectFit:"contain"}}/>
+                            </Carousel.Item>
+                        ))}
+                   </Carousel>
                 </Modal.Body>
             </Modal>
         </div>
