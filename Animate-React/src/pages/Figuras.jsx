@@ -2,13 +2,13 @@ import BarraNavegacion from "../components/BarraNavegacion";
 import Footer from "../components/Footer";
 import { useState } from "react";
 import TarjetaFigura from "../components/TarjetaFiguras";
-import { baseDatosFiguras } from "../data/figuras";
+import { obtenerCatalogoFiguras } from "../utils/catalogoFiguras";
 
 function Figuras(){
     const [busqueda, setBusqueda] = useState("");
     const [tipo, setTipo] = useState("todos");
     const [orden, setOrden] = useState("predeterminado");
-    const filtradas = baseDatosFiguras.filter(figura => {
+    const filtradas = obtenerCatalogoFiguras().filter(figura => {
         const cumpleTipo = tipo === "todos" || figura.tipoFigura === tipo;
         const cumpleBusqueda = figura.nombre.toLowerCase().includes(busqueda.toLowerCase());
         return cumpleTipo && cumpleBusqueda;

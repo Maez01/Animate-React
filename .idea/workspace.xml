@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="60985dee-3aaf-46f4-a308-da8e0818fa6f" name="Changes" comment="Se agregan las carpetas de imagenes, videos e iconos, ademas se agregan algunos Components vacios y data vacia y se inicia trabajo en la pagina de inicio de la tienda" />
+    <list default="true" id="60985dee-3aaf-46f4-a308-da8e0818fa6f" name="Changes" comment="Se comienza el trabajo de la vista del panel de admin, se modifica el catalogo de mangas para darle las funciones que necesita el admin y se crea el catalogoFiguras.js para las funciones necesarias para el panel, asi tambien se agrega la barra superior del admin y las formas para la tabla de figuras del admin." />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -18,28 +18,28 @@
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "Maez01"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Maez01&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/Maez01/Animate-React.git",
-    "accountId": "01f33995-e967-442c-8876-ef4cbc2f3e4e"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Maez01/Animate-React.git&quot;,
+    &quot;accountId&quot;: &quot;01f33995-e967-442c-8876-ef4cbc2f3e4e&quot;
   },
-  "recentNewPullRequestHead": {
-    "server": {
-      "useHttp": false,
-      "host": "github.com",
-      "port": null,
-      "suffix": null
+  &quot;recentNewPullRequestHead&quot;: {
+    &quot;server&quot;: {
+      &quot;useHttp&quot;: false,
+      &quot;host&quot;: &quot;github.com&quot;,
+      &quot;port&quot;: null,
+      &quot;suffix&quot;: null
     },
-    "owner": "Maez01",
-    "repository": "Animate-React"
+    &quot;owner&quot;: &quot;Maez01&quot;,
+    &quot;repository&quot;: &quot;Animate-React&quot;
   }
-}]]></component>
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 0
 }</component>
@@ -48,14 +48,14 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "Manuel",
-    "kotlin-language-version-configured": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;Manuel&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="60985dee-3aaf-46f4-a308-da8e0818fa6f" name="Changes" comment="" />
@@ -72,11 +72,20 @@
       <option name="project" value="LOCAL" />
       <updated>1791406340381</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Se comienza el trabajo de la vista del panel de admin, se modifica el catalogo de mangas para darle las funciones que necesita el admin y se crea el catalogoFiguras.js para las funciones necesarias para el panel, asi tambien se agrega la barra superior del admin y las formas para la tabla de figuras del admin.">
+      <option name="closed" value="true" />
+      <created>1791935821160</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1791935821160</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Se agregan las carpetas de imagenes, videos e iconos, ademas se agregan algunos Components vacios y data vacia y se inicia trabajo en la pagina de inicio de la tienda" />
-    <option name="LAST_COMMIT_MESSAGE" value="Se agregan las carpetas de imagenes, videos e iconos, ademas se agregan algunos Components vacios y data vacia y se inicia trabajo en la pagina de inicio de la tienda" />
+    <MESSAGE value="Se comienza el trabajo de la vista del panel de admin, se modifica el catalogo de mangas para darle las funciones que necesita el admin y se crea el catalogoFiguras.js para las funciones necesarias para el panel, asi tambien se agrega la barra superior del admin y las formas para la tabla de figuras del admin." />
+    <option name="LAST_COMMIT_MESSAGE" value="Se comienza el trabajo de la vista del panel de admin, se modifica el catalogo de mangas para darle las funciones que necesita el admin y se crea el catalogoFiguras.js para las funciones necesarias para el panel, asi tambien se agrega la barra superior del admin y las formas para la tabla de figuras del admin." />
   </component>
 </project>
