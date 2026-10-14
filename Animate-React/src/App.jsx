@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import InicioSesion from "./pages/InicioSesion";
 import Registro from "./pages/Registro";
 import Perfil from "./pages/PerfilUsuario";
+import PerfilAdmin from "./pages/PerfilAdmin";
 import Inicio from "./pages/Inicio";
 import Figuras from "./pages/Figuras";
 import Merchandaising from "./pages/Merchandaising";
@@ -24,6 +25,7 @@ function App() {
                 <Route path="/login" element={<InicioSesion />} />
                 <Route path="/registro" element={<Registro />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/perfil-admin" element={<PerfilAdmin />} />
                 <Route path="/perfil" element={<Perfil />} />
                 <Route path="/carrito" element={<Carrito />} />
             </Routes>

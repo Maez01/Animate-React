@@ -9,6 +9,9 @@ import {
 } from "../utils/carrito";
 import { formatearPrecio } from "../utils/formatoPrecio";
 import { obtenerStock, descontarStock } from "../utils/inventario";
+import { registrarVenta } from "../utils/ventas";
+import { obtenerSesion } from "../utils/usuarios";
+import { obtenerSeleccionada } from "../utils/tarjetas";
 
 const CARRITO_KEY = "carritoAnimate";
 
@@ -49,16 +52,29 @@ function CarritoProvider({ children }) {
         setCarrito(eliminarItem(carrito, clave));
     }
 
-    function finalizarCompra() {
-        if (carrito.length === 0) {
-            alert("Tu carrito está vacío.");
-            return;
+    function finalizarCompra(tarjetaInvitado) {
+            if (carrito.length === 0) {
+                alert("Tu carrito está vacío.");
+                return false;
+            }
+
+            const sesion = obtenerSesion();
+            const tarjeta = sesion ? obtenerSeleccionada(sesion.correo) : tarjetaInvitado;
+
+            if (!tarjeta) {
+                alert(sesion
+                    ? "Selecciona o registra una tarjeta en tu perfil antes de comprar."
+                    : "Debes ingresar una tarjeta para comprar.");
+                return false;
+            }
+
+            const total = calcularTotal(carrito);
+            descontarStock(carrito);
+            registrarVenta(carrito, total, sesion, tarjeta);
+            setCarrito([]);
+            alert("¡Gracias por tu compra! Total: " + formatearPrecio(total));
+            return true;
         }
-        const total = calcularTotal(carrito);
-        descontarStock(carrito);
-        setCarrito([]);
-        alert("¡Gracias por tu compra! Total: " + formatearPrecio(total));
-    }
 
     const valor = {
         carrito,
