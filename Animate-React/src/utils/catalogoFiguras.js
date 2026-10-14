@@ -84,3 +84,19 @@ export function cambiarPrecioYStockFigura(id, nuevoPrecio, nuevoStock){
     figura.stock = nuevoStock;
     guardarCatalogoFiguras(catalogo);
 }
+
+
+// Busca una figura por su id (lo usa el carrito para revisar el stock).
+export function obtenerFigura(id) {
+    return obtenerCatalogoFiguras().find(f => f.id === id) ?? null;
+}
+
+// Resta del stock de una figura la cantidad comprada.
+export function descontarStockFigura(id, cantidad) {
+    const catalogo = obtenerCatalogoFiguras();
+    const figura = catalogo.find(f => f.id === id);
+    if (!figura) return;
+
+    figura.stock = Math.max(0, figura.stock - cantidad);
+    guardarCatalogoFiguras(catalogo);
+}

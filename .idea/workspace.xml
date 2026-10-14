@@ -4,7 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="60985dee-3aaf-46f4-a308-da8e0818fa6f" name="Changes" comment="Se comienza el trabajo de la vista del panel de admin, se modifica el catalogo de mangas para darle las funciones que necesita el admin y se crea el catalogoFiguras.js para las funciones necesarias para el panel, asi tambien se agrega la barra superior del admin y las formas para la tabla de figuras del admin." />
+    <list default="true" id="60985dee-3aaf-46f4-a308-da8e0818fa6f" name="Changes" comment="Se completa el apartado del crud de figuras y mangas en el panel del admin">
+      <change beforePath="$PROJECT_DIR$/Animate-React/src/components/AdminFiguras.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Animate-React/src/components/AdminFiguras.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Animate-React/src/components/TarjetaFiguras.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Animate-React/src/components/TarjetaFiguras.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Animate-React/src/pages/Figuras.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Animate-React/src/pages/Figuras.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Animate-React/src/utils/catalogoFiguras.js" beforeDir="false" afterPath="$PROJECT_DIR$/Animate-React/src/utils/catalogoFiguras.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Animate-React/src/utils/inventario.js" beforeDir="false" afterPath="$PROJECT_DIR$/Animate-React/src/utils/inventario.js" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -80,12 +86,21 @@
       <option name="project" value="LOCAL" />
       <updated>1791935821160</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Se completa el apartado del crud de figuras y mangas en el panel del admin">
+      <option name="closed" value="true" />
+      <created>1791939696607</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1791939696607</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Se agregan las carpetas de imagenes, videos e iconos, ademas se agregan algunos Components vacios y data vacia y se inicia trabajo en la pagina de inicio de la tienda" />
     <MESSAGE value="Se comienza el trabajo de la vista del panel de admin, se modifica el catalogo de mangas para darle las funciones que necesita el admin y se crea el catalogoFiguras.js para las funciones necesarias para el panel, asi tambien se agrega la barra superior del admin y las formas para la tabla de figuras del admin." />
-    <option name="LAST_COMMIT_MESSAGE" value="Se comienza el trabajo de la vista del panel de admin, se modifica el catalogo de mangas para darle las funciones que necesita el admin y se crea el catalogoFiguras.js para las funciones necesarias para el panel, asi tambien se agrega la barra superior del admin y las formas para la tabla de figuras del admin." />
+    <MESSAGE value="Se completa el apartado del crud de figuras y mangas en el panel del admin" />
+    <option name="LAST_COMMIT_MESSAGE" value="Se completa el apartado del crud de figuras y mangas en el panel del admin" />
   </component>
 </project>

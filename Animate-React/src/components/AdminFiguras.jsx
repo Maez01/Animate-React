@@ -96,11 +96,11 @@ function AdminFiguras(){
                             <select className="form-select" name="tipoFigura"
                             value={formulario.tipoFigura} onChange={manejarCambio}>
                                 <option value="Figura a escala">Figura a escala</option>
-                                <option value="Nendoroid">NNendoroid</option>
+                                <option value="Nendoroid">Nendoroid</option>
                             </select>
                         </div>
                         <div className="col-md-6">
-                            <label className=" form-label">Immagen de portada</label>
+                            <label className=" form-label">Imagen de portada</label>
                             <input type="text" className="form-control" name="imgPortada" placeholder="Ej: /Imagenes/Figuras/nueva.webp"
                             value={formulario.imgPortada} onChange={manejarCambio}/>
                         </div>
@@ -110,7 +110,7 @@ function AdminFiguras(){
                             value={formulario.precio} onChange={manejarCambio}/>
                         </div>
                         <div className="col-md-6">
-                            <label className="form-label">Stovk</label>
+                            <label className="form-label">Stock</label>
                             <input type="number" min="0" className="form-control" name="stock"
                             value={formulario.stock} onChange={manejarCambio}/>
                         </div>
