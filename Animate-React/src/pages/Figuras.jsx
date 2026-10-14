@@ -3,11 +3,25 @@ import Footer from "../components/Footer";
 import { useState } from "react";
 import TarjetaFigura from "../components/TarjetaFiguras";
 import { obtenerCatalogoFiguras } from "../utils/catalogoFiguras";
+import { useCarrito } from "../context/carritoContext";
+import { crearClave } from "../utils/carrito";
 
 function Figuras(){
     const [busqueda, setBusqueda] = useState("");
     const [tipo, setTipo] = useState("todos");
     const [orden, setOrden] = useState("predeterminado");
+    const { agregar } = useCarrito();
+
+    function comprarFigura(figura) {
+        return agregar({
+            clave: crearClave("figura", figura.id),
+            tipo: "figura",
+            productoId: figura.id,
+            nombre: figura.nombre,
+            precio: figura.precio,
+            img: figura.imgPortada,
+        });
+    }
     const filtradas = obtenerCatalogoFiguras().filter(figura => {
         const cumpleTipo = tipo === "todos" || figura.tipoFigura === tipo;
         const cumpleBusqueda = figura.nombre.toLowerCase().includes(busqueda.toLowerCase());
@@ -62,7 +76,7 @@ function Figuras(){
                     </p>
                 )}
                 {filtradas.map(figura => (
-                    <TarjetaFigura key={figura.id} figura={figura} />
+                    <TarjetaFigura key={figura.id} figura={figura} alComprar={comprarFigura} />
                 ))}
             </div>
         </div>    
