@@ -1,13 +1,38 @@
-import { Container, Button } from "react-bootstrap";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Container, Button, Modal } from "react-bootstrap";
 import BarraNavegacion from "../components/BarraNavegacion";
 import Footer from "../components/Footer";
 import ItemCarrito from "../components/ItemCarrito";
 import { useCarrito } from "../context/carritoContext";
 import { formatearPrecio } from "../utils/formatoPrecio";
+import FormularioTarjeta from "../components/FormularioTarjeta";
+import { obtenerSesion } from "../utils/usuarios";
+import { obtenerSeleccionada, resumirTarjeta, textoTarjeta } from "../utils/tarjetas";
 
 function Carrito() {
     const { carrito, total, cambiarCantidad, eliminar, finalizarCompra } = useCarrito();
+    const [pedirTarjeta, setPedirTarjeta] = useState(false);
 
+        const sesion = obtenerSesion();
+        const tarjetaSeleccionada = sesion ? obtenerSeleccionada(sesion.correo) : null;
+
+        function manejarFinalizar() {
+            if (carrito.length === 0) {
+                alert("Tu carrito está vacío.");
+                return;
+            }
+            if (sesion) {
+                finalizarCompra();
+            } else {
+                setPedirTarjeta(true);
+            }
+        }
+
+        function pagarComoInvitado(datos) {
+            const listo = finalizarCompra(resumirTarjeta(datos));
+            if (listo) setPedirTarjeta(false);
+        }
     return (
         <div style={{ backgroundColor: "darkgray" }}>
             <BarraNavegacion />
@@ -31,15 +56,42 @@ function Carrito() {
                     )}
 
                     <div className="d-flex justify-content-between align-items-center border-top pt-3 mt-3">
-                        <h5 className="fw-bold mb-0">Total: {formatearPrecio(total)}</h5>
-                        <Button variant="success" className="fw-bold" onClick={finalizarCompra}>
-                            Finalizar compra
-                        </Button>
+                        <div>
+                            <h5 className="fw-bold mb-1">Total: {formatearPrecio(total)}</h5>
+                                {sesion && (
+                                    tarjetaSeleccionada ? (
+                                        <small className="opacity-75">Se pagará con {textoTarjeta(tarjetaSeleccionada)}</small>
+                                           ) : (
+                                               <small className="text-danger">
+                                                   No tienes una tarjeta seleccionada. <Link to="/perfil">Ir a mi perfil</Link>
+                                               </small>
+                                           )
+                                       )}
+                                   </div>
+                                   <Button variant="success" className="fw-bold" onClick={manejarFinalizar}>
+                                       Finalizar compra
+                                   </Button>
+                        </div>
                     </div>
-                </div>
             </Container>
 
             <Footer />
+            <Modal show={pedirTarjeta} onHide={() => setPedirTarjeta(false)} centered>
+                            <Modal.Header closeButton>
+                                <Modal.Title>Datos de pago</Modal.Title>
+                            </Modal.Header>
+                            <Modal.Body>
+                                <p>
+                                    Estás comprando como invitado. Ingresa los datos de tu tarjeta.
+                                    Total a pagar: <strong>{formatearPrecio(total)}</strong>
+                                </p>
+                                <FormularioTarjeta
+                                    alGuardar={pagarComoInvitado}
+                                    alCancelar={() => setPedirTarjeta(false)}
+                                    textoBoton="Pagar"
+                                />
+                            </Modal.Body>
+                        </Modal>
         </div>
     );
 }

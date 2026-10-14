@@ -52,8 +52,7 @@ export function textoTarjeta(tarjeta){
 //TARJETAS DE EL USUARIO
 
 export function obtenerTarjetas(correo){
-    return datosDe(correo);
-    return datos.lista.find(t => t.id === datos.seleccionada) || null;
+    return datosDe(correo).lista;
 }
 
 export function obtenerSeleccionada(correo){
@@ -70,7 +69,7 @@ export function agregarTarjeta(correo, tarjeta){
 
 export function eliminarTarjeta(correo, id){
     const datos = datosDe(correo);
-    datos.lista = datos.lista.filyer(t => t.id !==id);
+    datos.lista = datos.lista.filter(t => t.id !==id);
     if (datos.seleccionada === id){
         datos.seleccionada = datos.lista.length > 0 ? datos.lista[0].id : null;
     }
@@ -83,3 +82,15 @@ export function seleccionarTarjeta(correo, id){
     guardarDatosDe(correo,datos);
 }
 
+export function cambiarCorreoTarjetas(correoAnterior, correoNuevo){
+    const anterior = correoAnterior.toLowerCase();
+    const nuevo = correoNuevo.toLowerCase();
+    if (anterior === nuevo) return;
+
+    const todo = leerTodo();
+    if (!todo[anterior]) return;
+
+    todo[nuevo] = todo[anterior];
+    delete todo[anterior];
+    guardarTodo(todo);
+}
