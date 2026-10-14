@@ -4,7 +4,7 @@
     box-sizing: border-box;
 }
 .fondo-login, .fondo-perfil{
-    background-image: url('../assets/imagenes/fondo-celeste.avif');
+    background-image: url('../Imagenes/logo+nombre.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;

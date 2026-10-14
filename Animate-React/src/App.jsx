@@ -9,6 +9,7 @@ import Tecnologia from "./pages/Tecnologia";
 import Preventas from "./pages/Preventas";
 import Mangas from "./pages/Mangas";
 import Carrito from "./pages/Carrito";
+import Admin from "./pages/Admin";
 
 function App() {
     return (
@@ -22,7 +23,7 @@ function App() {
                 <Route path="/preventas" element={<Preventas/>} />
                 <Route path="/login" element={<InicioSesion />} />
                 <Route path="/registro" element={<Registro />} />
-                <Route path="/admin" element={<h1>Panel admin (pendiente)</h1>} />
+                <Route path="/admin" element={<Admin />} />
                 <Route path="/perfil" element={<Perfil />} />
                 <Route path="/carrito" element={<Carrito />} />
             </Routes>
