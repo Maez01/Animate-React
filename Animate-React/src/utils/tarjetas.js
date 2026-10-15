@@ -4,12 +4,12 @@ import {soloLetras} from "./usuarios";
 const TARJETAS_KEY = "tarjetasAnimate";
 
 function leerTodo(){
-    const data = localStorage.getItem(TARJETAS_KEY);
+    const data = sessionStorage.getItem(TARJETAS_KEY);
     return data ? JSON.parse(data): {};
 }
 
 function guardarTodo(todo){
-    localStorage.setItem(TARJETAS_KEY, JSON.stringify(todo))
+    sessionStorage.setItem(TARJETAS_KEY, JSON.stringify(todo))
 }
 
 function datosDe(correo){

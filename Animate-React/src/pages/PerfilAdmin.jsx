@@ -3,7 +3,7 @@ import { obtenerVentas } from "../utils/ventas";
 import { formatearPrecio } from "../utils/formatoPrecio";
 import { Container, Card, Row, Col, Button, Modal, Form, Table } from "react-bootstrap";
 import { useState } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, Link } from "react-router-dom";
 
 function PerfilAdmin() {
 
@@ -95,7 +95,12 @@ function PerfilAdmin() {
             <Container>
                 <Card className="perfil-card">
                     <Card.Body>
-                        <h4 className="mb-4">Perfil de administrador</h4>
+                        <div className="d-flex align-items-center gap-3 mb-4">
+                            <Link to="/" title="Volver al inicio">
+                                <img src="/Imagenes/logo.jpg" alt="Volver al inicio" className="logo-perfil" />
+                            </Link>
+                                <h4 className="mb-0">Perfil de administrador</h4>
+                        </div>
                         <Row>
                             <Col md={7}>
                                 <p>Nombre: {usuario.nombre}</p>
