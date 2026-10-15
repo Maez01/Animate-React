@@ -1,12 +1,13 @@
 import { formatearPrecio } from "../utils/formatoPrecio";
 import { useState } from "react";
 import { Carousel, Modal } from "react-bootstrap";
+import { obtenerImagenesGaleria } from "../utils/catalogoFiguras";
 
 function TarjetaFigura({ figura, alComprar }) {
     const sinStock = figura.stock === 0;
     const [verImagen, setVerImagen] = useState(false);
     const [agregado, setAgregado] = useState(false);
-    const imagenes = figura.galeria || [figura.imgPortada];
+    const imagenes = obtenerImagenesGaleria(figura);
     const variasImagenes = imagenes.length > 1;
 
     function manejarCompra() {

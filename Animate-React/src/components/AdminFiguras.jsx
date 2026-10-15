@@ -91,7 +91,7 @@ function AdminFiguras(){
                         </div>
                         <div className="col-md-6">
                             <label className="form-label">Proveniencia</label>
-                            <input type="text" className="form-control" namme="provemiemcia" placeholder="Ej: Punishing Gray Raven"
+                            <input type="text" className="form-control" name="proveniencia" placeholder="Ej: Punishing Gray Raven"
                             value={formulario.proveniencia} onChange={manejarCambio}/>
                         </div>
                         <div className="col-md-6">

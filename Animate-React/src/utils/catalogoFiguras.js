@@ -98,24 +98,25 @@ export function descontarStockFigura(id, cantidad) {
     guardarCatalogoFiguras(catalogo);
 }
 
+export function obtenerImagenesGaleria(figura) {
+    const extras = (figura.galeria || []).filter(imagen => imagen !== figura.imgPortada);
+    return [figura.imgPortada, ...extras];
+}
+
 export function agregarImagenGaleria(id, ruta) {
     const catalogo = obtenerCatalogoFiguras();
     const figura = catalogo.find(f => f.id === id);
     if (!figura) return;
 
-    const galeria = figura.galeria || [figura.imgPortada];
-    figura.galeria = [...galeria, ruta];
+    figura.galeria = [...(figura.galeria || []), ruta];
     guardarCatalogoFiguras(catalogo);
 }
 
 export function eliminarImagenGaleria(id, ruta) {
     const catalogo = obtenerCatalogoFiguras();
     const figura = catalogo.find(f => f.id === id);
-    if (!figura) return;
+    if (!figura || ruta === figura.imgPortada) return;
 
-    const galeria = figura.galeria || [figura.imgPortada];
-    if (galeria.length <= 1) return;
-
-    figura.galeria = galeria.filter(imagen => imagen !== ruta);
+    figura.galeria = (figura.galeria || []).filter(imagen => imagen !== ruta);
     guardarCatalogoFiguras(catalogo);
 }
