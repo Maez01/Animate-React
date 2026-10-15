@@ -24,6 +24,9 @@ function BarraAdmin({sesion}){
                     </Nav>
                     <Nav className="align-items-lg-center gap-2">
                         <Navbar.Text>{sesion.nombre} ({sesion.rol})</Navbar.Text>
+                            <Button as={Link} to="/perfil-admin" variant="outline-primary" size="sm">
+                                       Mi perfil
+                            </Button>
                         <Button variant="outline-danger" size="sm" onClick={manejarCerrarSesion}>
                             Cerrar sesion
                         </Button>
