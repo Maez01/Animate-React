@@ -13,7 +13,7 @@ import{
 const formularioVacio ={
     nombre: "",
     proveniencia: "",
-    tipoFigura: "",
+    tipoFigura: "Figura a escala",
     imgPortada: "",
     precio: "",
     stock: "",
