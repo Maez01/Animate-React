@@ -1,3 +1,4 @@
+import { textoDireccion } from "./direcciones";
 const VENTAS_KEY = "ventasAnimate";
 
 // Devuelve todas las ventas guardadas (o una lista vacía)
@@ -14,12 +15,13 @@ export function obtenerVentasDe(correo) {
 }
 
 // Guarda una venta nueva con los productos del carrito y la tarjeta usada
-export function registrarVenta(carrito, total, comprador, tarjeta) {
+export function registrarVenta(carrito, total, comprador, tarjeta, direccion) {
     const ventas = obtenerVentas();
     ventas.push({
         id: Date.now(),
         fecha: new Date().toLocaleString("es-CL"),
         comprador: comprador ? comprador.correo : "Invitado",
+        direccion: textoDireccion(direccion),
         tarjeta: `**** ${tarjeta.ultimos4}`,
         productos: carrito.map(item => ({
             nombre: item.nombre,
