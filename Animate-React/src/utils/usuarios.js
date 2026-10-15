@@ -1,6 +1,6 @@
 const usuariosBase = [
-    { nombre: "Ana", apellido: "Gonzales", correo: "ana@email.com", contrasenia: "admin123", rol: "Admin" },
-    { nombre: "Carlos", apellido: "Calderon", correo: "carlos@email.com", contrasenia: "laraña", rol: "Usuario"},
+    { nombre: "Ana", apellido: "Gonzales", correo: "ana@email.com", contrasenia: "AdminAnimate#1", rol: "Admin" },
+    { nombre: "Carlos", apellido: "Calderon", correo: "carlos@email.com", contrasenia: "Carlos#Laraña1", rol: "Usuario"},
 ];
 
 const USUARIOS_KEY = "usuarios";
@@ -10,6 +10,10 @@ const SESION_KEY = "usuarioActual";
 export const soloLetras = /^[A-Za-zÁÉÍÓÚÑáéíóúñ\s]+$/;
 // Formato básico de correo
 export const formatoCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Al menos una mayúscula (incluye tildes y Ñ)
+export const tieneMayuscula = /[A-ZÁÉÍÓÚÑ]/;
+// Al menos un carácter especial de estos: # $ % & *
+export const tieneEspecial = /[#$%&*]/;
 
 
 /// ---------- Lista de usuarios (sessionStorage) ----------
@@ -51,6 +55,13 @@ export function validarRegistro(datos, todos) {
     if (!soloLetras.test(nombre)) errores.nombre = "El nombre solo debe contener letras";
     if (!soloLetras.test(apellido)) errores.apellido = "El apellido solo debe contener letras";
     if (!formatoCorreo.test(correo)) errores.correo = "Ingrese un correo válido";
+
+    if (contrasenia.length < 12)
+        errores.contrasenia = "La contraseña debe tener al menos 12 caracteres";
+    else if (!tieneMayuscula.test(contrasenia))
+        errores.contrasenia = "La contraseña debe tener al menos una mayúscula";
+    else if (!tieneEspecial.test(contrasenia))
+        errores.contrasenia = "La contraseña debe tener al menos un carácter especial (# $ % & *)";
 
     if (todos.some(u => u.nombre.toLowerCase() === nombre.toLowerCase()))
         errores.nombre = "Ese nombre ya está registrado";
