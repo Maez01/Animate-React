@@ -85,18 +85,37 @@ export function cambiarPrecioYStockFigura(id, nuevoPrecio, nuevoStock){
     guardarCatalogoFiguras(catalogo);
 }
 
-
-// Busca una figura por su id (lo usa el carrito para revisar el stock).
 export function obtenerFigura(id) {
     return obtenerCatalogoFiguras().find(f => f.id === id) ?? null;
 }
 
-// Resta del stock de una figura la cantidad comprada.
 export function descontarStockFigura(id, cantidad) {
     const catalogo = obtenerCatalogoFiguras();
     const figura = catalogo.find(f => f.id === id);
     if (!figura) return;
 
     figura.stock = Math.max(0, figura.stock - cantidad);
+    guardarCatalogoFiguras(catalogo);
+}
+
+export function agregarImagenGaleria(id, ruta) {
+    const catalogo = obtenerCatalogoFiguras();
+    const figura = catalogo.find(f => f.id === id);
+    if (!figura) return;
+
+    const galeria = figura.galeria || [figura.imgPortada];
+    figura.galeria = [...galeria, ruta];
+    guardarCatalogoFiguras(catalogo);
+}
+
+export function eliminarImagenGaleria(id, ruta) {
+    const catalogo = obtenerCatalogoFiguras();
+    const figura = catalogo.find(f => f.id === id);
+    if (!figura) return;
+
+    const galeria = figura.galeria || [figura.imgPortada];
+    if (galeria.length <= 1) return;
+
+    figura.galeria = galeria.filter(imagen => imagen !== ruta);
     guardarCatalogoFiguras(catalogo);
 }
