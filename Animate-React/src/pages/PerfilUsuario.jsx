@@ -221,8 +221,8 @@ function Perfil()   {
                             )}
 
                             {seccion === "historial" && (
-                                misCompras.lenght === 0 ?(
-                                    <p>Todavia no haz realizado compras</p>
+                                misCompras.length === 0 ?(
+                                    <p>Todavia no has realizado compras</p>
                                 ) : (
                                     <>
                                         <p>
