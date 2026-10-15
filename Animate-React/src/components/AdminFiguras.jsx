@@ -1,5 +1,6 @@
 import { useState } from "react";
 import FilaFiguraAdmin from "./FilaFiguraAdmin";
+import ModalGaleriaAdmin from "./ModalGaleriaAdmin";
 import{
     obtenerCatalogoFiguras,
     obtenerPapeleraFiguras,
@@ -23,6 +24,8 @@ function AdminFiguras(){
     const [papelera, setPapelera] = useState(obtenerPapeleraFiguras());
     const [formulario, setFormulario] = useState(formularioVacio);
     const [error, setError] = useState("");
+    const [figuraIdAbierta, setFiguraIdAbierta] = useState(null);
+    const figuraAbierta = figuras.find(f => f.id === figuraIdAbierta) || null;
 
     function recargar(){
         setFiguras(obtenerCatalogoFiguras());
@@ -63,7 +66,7 @@ function AdminFiguras(){
     }
 
     function manejarEliminar(figura){
-        if(window.confirm(`Eliminar "${figura.nombre}" del catalogo?`));{
+        if(window.confirm(`Eliminar "${figura.nombre}" del catalogo?`)){
             eliminarFigura(figura.id);
             recargar();
         }        
@@ -145,7 +148,7 @@ function AdminFiguras(){
                             )}
 
                             {figuras.map(figura => (
-                                <FilaFiguraAdmin key={figura.id} figura={figura} alGuardar={manejarGuardar} alEliminar={manejarEliminar}/>
+                                <FilaFiguraAdmin key={figura.id} figura={figura} alGuardar={manejarGuardar} alEliminar={manejarEliminar} alVerGaleria={figura=> setFiguraIdAbierta(figura.id)}/>
                             ))}
                         </tbody>
                     </table>
@@ -158,38 +161,41 @@ function AdminFiguras(){
                 <h5 className="card-title fw-bold mb-3">Papelera figuras</h5>
                 <p className="text-muted smmall mb-3">Las figuras eliminadas quedan en la papelera, pueden ser restauradas</p>
                 <div className="table-responsive">
-                    <thead>
-                        <tr>
-                            <th>Portadas</th>
-                            <th>Nombre</th>
-                            <th>Tipo</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {papelera.length === 0 && (
+                    <table className="table align-middle">
+                        <thead>
                             <tr>
-                                <td colSpan="4" className="text-center text-muted">La papelera esta vacia</td>
+                                <th>Portadas</th>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th></th>
                             </tr>
-                        )}
-                        {papelera.map(figura =>(
-                            <tr key={figura.id}>
-                                <td>
-                                    <img src={figura.imgPortada} alt={figura.nombre} style={{width:"50px", height:"65px", objectFit:"cover", borderRadius:"4px", opacity:0.6}}/>
-                                </td>
-                                <td className="text-muted"><del>{figura.nombre}</del></td>
-                                <td className="text-muted">{figura.tipoFigura}</td>
-                                <td>
-                                    <button className="btn btn-outline-success btn-sm fw-bold" onClick={()=>manejarRestaurar(figura.id)}>
-                                        Restaurar
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
+                        </thead>
+                        <tbody>
+                            {papelera.length === 0 && (
+                                <tr>
+                                    <td colSpan="4" className="text-center text-muted">La papelera esta vacia</td>
+                                </tr>
+                            )}
+                            {papelera.map(figura =>(
+                                <tr key={figura.id}>
+                                    <td>
+                                        <img src={figura.imgPortada} alt={figura.nombre} style={{width:"50px", height:"65px", objectFit:"cover", borderRadius:"4px", opacity:0.6}}/>
+                                    </td>
+                                    <td className="text-muted"><del>{figura.nombre}</del></td>
+                                    <td className="text-muted">{figura.tipoFigura}</td>
+                                    <td>
+                                        <button className="btn btn-outline-success btn-sm fw-bold" onClick={()=>manejarRestaurar(figura.id)}>
+                                            Restaurar
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </div>
+        </div> 
+        <ModalGaleriaAdmin figura={figuraAbierta} alCerrar={() => setFiguraIdAbierta(null)} alCambiar={recargar} />
         </>
     )
 }
