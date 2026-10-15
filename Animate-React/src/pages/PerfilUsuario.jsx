@@ -1,9 +1,11 @@
 import { obtenerUsuario, cerrarSesion, buscarUsuario, actualizarUsuario, obtenerTodosUsuarios, validarRegistro } from "../utils/usuarios";
 import { obtenerTarjetas, obtenerSeleccionada, agregarTarjeta, eliminarTarjeta, seleccionarTarjeta, resumirTarjeta, textoTarjeta, cambiarCorreoTarjetas } from "../utils/tarjetas";
 import FormularioTarjeta from "../components/FormularioTarjeta";
-import { Container, Card, Row, Col, Button, Modal, Form, ListGroup } from "react-bootstrap";
+import { obtenerVentasDe, cambiarCorreoVentas } from "../utils/ventas";
+import { formatearPrecio } from "../utils/formatoPrecio";
+import { Container, Card, Row, Col, Button, Modal, Form, ListGroup, Table } from "react-bootstrap";
 import { useState } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, Link } from "react-router-dom";
 
 const titulos ={
     editar: "Editar perfil",
@@ -35,6 +37,8 @@ function Perfil()   {
 
     if (!usuario) return <Navigate to="/login" />;
     if (usuario.rol === "Admin") return <Navigate to="/perfil-admin" />;
+    const misCompras = obtenerVentasDe(usuario.correo);
+    const totalGastado = misCompras.reduce((suma, c) => suma + c.total, 0);
 
         function manejarCerrarSesion() {
             cerrarSesion();
@@ -90,6 +94,7 @@ function Perfil()   {
             }
 
             cambiarCorreoTarjetas(usuario.correo, limpios.correo);
+                    cambiarCorreoVentas(usuario.correo, limpios.correo);
                     actualizarUsuario(usuario.correo, limpios);
                     cerrarModal();
             }
@@ -131,7 +136,12 @@ function Perfil()   {
                 <Container>
                     <Card className="perfil-card">
                         <Card.Body>
-                            <h4 className="mb-4">Mi perfil</h4>
+                            <div className="d-flex align-items-center gap-3 mb-4">
+                                <Link to="/" title="Volver al inicio">
+                                    <img src="/Imagenes/logo.jpg" alt="Volver al inicio" className="logo-perfil" />
+                                </Link>
+                                <h4 className="mb-0">Mi perfil</h4>
+                                </div>
                             <Row>
                                 <Col md={7}>
                                     <p>Nombre: {usuario.nombre}</p>
@@ -211,7 +221,42 @@ function Perfil()   {
                             )}
 
                             {seccion === "historial" && (
-                                <p>Aqui va el historial de compras</p>
+                                misCompras.lenght === 0 ?(
+                                    <p>Todavia no haz realizado compras</p>
+                                ) : (
+                                    <>
+                                        <p>
+                                            Compras realizadas: {misCompras.length} | Total gastado: {formatearPrecio(totalGastado)}
+                                        </p>
+                                        <Table striped bordered hover variant="dark" responsive>
+                                            <thead>
+                                                <tr>
+                                                    <th>Fecha</th>
+                                                    <th>Productos</th>
+                                                    <th>Tarjeta</th>
+                                                    <th>Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {misCompras.map(c => (
+                                                    <tr key={c.id}>
+                                                        <td>{c.fecha}</td>
+                                                        <td>
+                                                            {c.productos.map((p,i) => (
+                                                                <div key={i}>
+                                                                    {p.nombre} x{p.cantidad} ({formatearPrecio(p.precio * p.cantidad)})
+                                                                </div>
+                                                           ))}
+                                                        </td>
+                                                        <td>{c.tarjeta}</td>
+                                                        <td>{formatearPrecio(c.total)}</td>
+                                                    </tr>
+                                               ))}
+                                            </tbody>
+                                        </Table>
+                                    </>
+
+                                )
                             )}
 
                         {seccion === "tarjetas" && (

@@ -30,7 +30,11 @@ function BarraNavegacion(){
                 </Nav>
                 <Nav className="align-items-lg-center">
                     <img src="/Iconos/user_circle.png" className="imagen35x35" alt=""/>
-                    <Nav.Link as={Link} to="/login">Inicio sesion</Nav.Link>
+                    {sesion ? (
+                        <Nav.Link as={Link} to={esAdmin ? "/perfil-admin" : "/perfil"}>Perfil del usuario</Nav.Link>
+                        ) : (
+                            <Nav.Link as={Link} to="/login">Inicio sesion</Nav.Link>
+                        )}
 
                     <Nav.Link as={Link} to="/carrito" className="d-flex align-items-center gap-1">
                     <img src="/Iconos/share.png" className="imagen35x35" alt=""/>
