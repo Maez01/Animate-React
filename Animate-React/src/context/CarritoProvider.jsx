@@ -12,6 +12,7 @@ import { obtenerStock, descontarStock } from "../utils/inventario";
 import { registrarVenta } from "../utils/ventas";
 import { obtenerSesion } from "../utils/usuarios";
 import { obtenerSeleccionada } from "../utils/tarjetas";
+import { obtenerDireccionSeleccionada } from "../utils/direcciones";
 
 const CARRITO_KEY = "carritoAnimate";
 
@@ -52,29 +53,37 @@ function CarritoProvider({ children }) {
         setCarrito(eliminarItem(carrito, clave));
     }
 
-    function finalizarCompra(tarjetaInvitado) {
-            if (carrito.length === 0) {
-                alert("Tu carrito está vacío.");
-                return false;
-            }
+       function finalizarCompra(tarjetaInvitado, direccionInvitado) {
+           if (carrito.length === 0) {
+               alert("Tu carrito está vacío.");
+               return false;
+           }
 
-            const sesion = obtenerSesion();
-            const tarjeta = sesion ? obtenerSeleccionada(sesion.correo) : tarjetaInvitado;
+           const sesion = obtenerSesion();
+           const tarjeta = sesion ? obtenerSeleccionada(sesion.correo) : tarjetaInvitado;
+           const direccion = sesion ? obtenerDireccionSeleccionada(sesion.correo) : direccionInvitado;
 
-            if (!tarjeta) {
-                alert(sesion
-                    ? "Selecciona o registra una tarjeta en tu perfil antes de comprar."
-                    : "Debes ingresar una tarjeta para comprar.");
-                return false;
-            }
+           if (!tarjeta) {
+               alert(sesion
+                   ? "Selecciona o registra una tarjeta en tu perfil antes de comprar."
+                   : "Debes ingresar una tarjeta para comprar.");
+               return false;
+           }
 
-            const total = calcularTotal(carrito);
-            descontarStock(carrito);
-            registrarVenta(carrito, total, sesion, tarjeta);
-            setCarrito([]);
-            alert("¡Gracias por tu compra! Total: " + formatearPrecio(total));
-            return true;
-        }
+           if (!direccion) {
+               alert(sesion
+                   ? "Selecciona o registra una dirección de envío en tu perfil antes de comprar."
+                   : "Debes ingresar una dirección de envío para comprar.");
+               return false;
+           }
+
+           const total = calcularTotal(carrito);
+           descontarStock(carrito);
+           registrarVenta(carrito, total, sesion, tarjeta, direccion);
+           setCarrito([]);
+           alert("¡Gracias por tu compra! Total: " + formatearPrecio(total));
+           return true;
+       }
 
     const valor = {
         carrito,
