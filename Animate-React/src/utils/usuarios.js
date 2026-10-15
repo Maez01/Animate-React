@@ -1,6 +1,7 @@
 const usuariosBase = [
     { nombre: "Ana", apellido: "Gonzales", correo: "ana@email.com", contrasenia: "admin123", rol: "Admin" },
     { nombre: "Carlos", apellido: "Calderon", correo: "carlos@email.com", contrasenia: "laraña", rol: "Usuario"},
+    { nombre: "Manuel", apellido: "Guzman", correo: "manuel@email.com", contrasenia: "admin456", rol: "Admin" },
 ];
 
 const USUARIOS_KEY = "usuarios";
