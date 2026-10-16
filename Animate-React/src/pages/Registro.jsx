@@ -34,7 +34,7 @@ function Registro() {
     }
 
     return (
-        <div className="fondo-registro">
+        <div className="fondo-login">
             <form onSubmit={manejarEnvio} noValidate>
                 <section className="form-register">
                     <h4>Registro</h4>
