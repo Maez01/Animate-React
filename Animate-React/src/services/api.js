@@ -52,7 +52,7 @@ export class ErrorApi extends Error{
 function mensajePorEstado(status) {
     if (status === 401) return "Debes iniciar sesion";
     if (status === 403) return "No tienes permisos para realizar esta accion";
-    if (status === 500) return "El servidor no esta disponible"
+    if (status >= 500) return "El servidor no esta disponible"
     return "Ocurrio un error inesperado";
 }
 
@@ -130,7 +130,7 @@ export async function cerrarSesionApi() {
  try {
     await llamarAuth("logout");
  } catch {
-
+    // Aunque el backend no responda, la sesión del navegador se borra igual
  } finally {
     limpiarSesionApi();
  }
@@ -141,11 +141,11 @@ export async function cerrarSesionApi() {
 export async function api(ruta, { metodo = "GET", cuerpo, cabeceras = {} } = {}, reintentar = true) {
     const headers = { ...cabeceras };
     if (cuerpo !== undefined) headers["Content-Type"] = "application/json";
-    if (accessToken) headers. Authorization = ´Bearer ${accessToken}´;
+    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
     let res;
     try {
-        res = await fetch(´${API_URL}${ruta}´, {
+        res = await fetch(`${API_URL}${ruta}`, {
             method: metodo,
             headers,
             body: cuerpo !== undefined ? JSON.stringify(cuerpo) : undefined,
@@ -155,13 +155,13 @@ export async function api(ruta, { metodo = "GET", cuerpo, cabeceras = {} } = {},
     }
 
     // El token dura 15 minutos: si venció, se renueva una vez y se repite la llamada
-    if (res.status === 401 && accessToken reintentar) {
+    if (res.status === 401 && accessToken && reintentar) {
         try {
             await renovarSesion();
         } catch {
             throw new ErrorApi(401, "Tu sesion expiro");
         }
-        return api(rura, {metodo, cuerpo, cabeceras}, false);
+        return api(ruta, {metodo, cuerpo, cabeceras}, false);
     }
 
     return leerRespuesta(res);
