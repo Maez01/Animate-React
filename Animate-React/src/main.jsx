@@ -5,11 +5,14 @@ import './styles/estilos.css'
 import './styles/formularios.css'
 import App from './App.jsx'
 import CarritoProvider from './context/CarritoProvider.jsx'
+import AuthProvider from './context/AuthProvider.jsx'
 
 createRoot(document.getElementById('root')).render(
     <StrictMode>
-        <CarritoProvider>
-            <App />
-        </CarritoProvider>
-    </StrictMode>,
+            <AuthProvider>
+                <CarritoProvider>
+                    <App />
+                </CarritoProvider>
+            </AuthProvider>
+        </StrictMode>,
 )
