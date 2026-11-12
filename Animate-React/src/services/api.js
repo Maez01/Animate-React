@@ -56,3 +56,128 @@ function mensajePorEstado(status) {
     return "Ocurrio un error inesperado";
 }
 
+function sinConexion() {
+    return new ErrorApi(0,"No se pudo conectar con el servidor")
+
+}
+
+async function leerRespuesta(res){
+    if (res.status === 204) return null;
+
+    const texto = await res.text();
+    let datos = null;
+    try{
+        datos = texto ? JSON.parse(texto) : null;
+    } catch {
+        datos = null;
+    }
+
+    if (!res.ok) {
+        throw new ErrorApi(res.status, datos?.mensaje || mensajePorEstado(res.status), datos?.campos || {});
+    }
+    return datos;
+}
+
+// ---------- Autenticación (usa la cookie HttpOnly) ----------
+async function llamarAuth(ruta, cuerpo) {
+    let res;
+    try{
+        res = await fetch(`${API_URL}/auth/${ruta}`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json", "X-Requested-With": "Animate"},
+            body: cuerpo ? JSON.stringify(cuerpo): undefined,
+        });
+    } catch {
+        throw sinConexion();
+    }
+    return leerRespuesta(res);
+}
+
+
+export async function iniciarSesion(correo, contrasenia) {
+    const sesion = await llamarAuth("login", { correo, contrasenia });
+    guardarSesionApi(sesion);
+    return sesion.usuario;
+}
+
+
+// Si se piden dos renovaciones al mismo tiempo, ambas esperan la misma.
+// Así la cookie no se usa dos veces (el backend la cambia en cada renovación).
+
+let renovacionEnCurso = null;
+
+
+export function renovarSesion() {
+    if (!renovacionEnCurso) {
+        renovacionEnCurso = llamarAuth("refresh")
+        .then(sesion =>{
+            guardarSesionApi(sesion);
+            return sesion.usuario;
+        })
+        .catch(error => {
+            limpiarSesionApi();
+            throw error;
+        })
+        .finally(() =>{
+            renovacionEnCurso = null;
+        });
+    }
+    return renovacionEnCurso;
+}
+
+export async function cerrarSesionApi() {
+ try {
+    await llamarAuth("logout");
+ } catch {
+
+ } finally {
+    limpiarSesionApi();
+ }
+}
+
+
+// ---------- Llamadas al resto de la API ----------
+export async function api(ruta, { metodo = "GET", cuerpo, cabeceras = {} } = {}, reintentar = true) {
+    const headers = { ...cabeceras };
+    if (cuerpo !== undefined) headers["Content-Type"] = "application/json";
+    if (accessToken) headers. Authorization = ´Bearer ${accessToken}´;
+
+    let res;
+    try {
+        res = await fetch(´${API_URL}${ruta}´, {
+            method: metodo,
+            headers,
+            body: cuerpo !== undefined ? JSON.stringify(cuerpo) : undefined,
+        });
+    } catch {
+        throw sinConexion();
+    }
+
+    // El token dura 15 minutos: si venció, se renueva una vez y se repite la llamada
+    if (res.status === 401 && accessToken reintentar) {
+        try {
+            await renovarSesion();
+        } catch {
+            throw new ErrorApi(401, "Tu sesion expiro");
+        }
+        return api(rura, {metodo, cuerpo, cabeceras}, false);
+    }
+
+    return leerRespuesta(res);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
