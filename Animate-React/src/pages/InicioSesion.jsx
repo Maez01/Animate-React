@@ -1,36 +1,40 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import CampoFormulario from "../components/CampoFormulario";
-import { buscarUsuario, guardarSesion } from "../utils/usuarios";
+import { useAuth } from "../context/authContext";
 
 // Ruta a la imagen dentro de public/ (Vite la sirve desde la raíz "/")
 const logoCircular = "/Imagenes/logo.jpg";
 
 function InicioSesion() {
     const navigate = useNavigate();
-
+    const location = useLocation();
+    const { login } = useAuth();
     const [correo, setCorreo] = useState("");
     const [contrasenia, setContrasenia] = useState("");
     const [errorLogin, setErrorLogin] = useState("");
+    const [enviando, setEnviando] = useState(false);
 
-    function manejarEnvio(e) {
-        e.preventDefault();
-        setErrorLogin("");
+        async function manejarEnvio(e) {
+            e.preventDefault();
+            setErrorLogin("");
 
-        if (correo.trim() === "" || contrasenia === "") {
-            setErrorLogin("Complete correo y contraseña");
-            return;
+            if (correo.trim() === "" || contrasenia === "") {
+                setErrorLogin("Complete correo y contraseña");
+                return;
+            }
+
+            setEnviando(true);
+            try {
+                const usuario = await login(correo.trim(), contrasenia);
+                const destino = location.state?.desde || (usuario.rol === "ADMIN" ? "/admin" : "/");
+                navigate(destino, { replace: true });
+            } catch (error) {
+                setErrorLogin(error.message);
+            } finally {
+                setEnviando(false);
+            }
         }
-
-        const usuario = buscarUsuario(correo.trim(), contrasenia);
-        if (!usuario) {
-            setErrorLogin("Correo o contraseña incorrectos");
-            return;
-        }
-
-        guardarSesion(usuario);
-        navigate(usuario.rol === "Admin" ? "/admin" : "/");
-    }
 
     return (
         <div className="fondo-login">
@@ -50,7 +54,9 @@ function InicioSesion() {
 
                     {errorLogin && <span className="error">{errorLogin}</span>}
 
-                    <button className="button" type="submit">Iniciar sesión</button>
+                    <button className="button" type="submit" disabled={enviando}>
+                        {enviando ? "Ingresando..." : "Iniciar sesión"}
+                    </button>
                 </form>
 
                 <p><Link to="/registro">No tengo cuenta</Link></p>

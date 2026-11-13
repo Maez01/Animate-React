@@ -1,12 +1,19 @@
 import { createContext, useContext } from "react";
+import { iniciarSesion, cerrarSesionApi, renovarSesion } from "../services/api";
 
-export const AuthContext = createContext(null);
+// Valor cuando no hay <AuthProvider> (por ejemplo, en las pruebas de una página suelta):
+// se comporta como un visitante sin sesión, en vez de romper la página.
+const SIN_SESION = {
+    usuario: null,
+    cargando: false,
+    esAdmin: false,
+    login: iniciarSesion,
+    logout: cerrarSesionApi,
+    refrescarSesion: renovarSesion,
+};
+
+export const AuthContext = createContext(SIN_SESION);
 
 export function useAuth() {
-    const contexto = useContext(AuthContext);
-    if (!contexto) {
-        throw new Error("useAuth debe usarse dentro de <AuthProvider>")
-
-    }
-    return contexto;
+    return useContext(AuthContext);
 }

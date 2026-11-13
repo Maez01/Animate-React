@@ -1,12 +1,10 @@
 import {Link} from "react-router-dom";
 import {Navbar, Nav, NavDropdown, Container} from "react-bootstrap";
-import {obtenerSesion} from "../utils/usuarios";
+import { useAuth } from "../context/authContext";
 import { useCarrito } from "../context/carritoContext";
 
 function BarraNavegacion(){
-    const sesion = obtenerSesion();
-    const esAdmin = sesion !== null && sesion.rol ==="Admin";
-
+    const { usuario: sesion, esAdmin } = useAuth();
     const { cantidadTotal: cantidadCarrito } = useCarrito();
 
     return(
