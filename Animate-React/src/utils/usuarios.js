@@ -1,3 +1,4 @@
+import { api, obtenerUsuarioActual, cerrarSesionApi } from "../services/api";
 const usuariosBase = [
     { nombre: "Ana", apellido: "Gonzales", correo: "ana@email.com", contrasenia: "AdminAnimate#1", rol: "Admin" },
     { nombre: "Carlos", apellido: "Calderon", correo: "carlos@email.com", contrasenia: "Carlos#Laraña1", rol: "Usuario"},
@@ -33,16 +34,17 @@ export function guardarSesion(usuario) {
 }
 
 export function obtenerSesion() {
-    const data = sessionStorage.getItem(SESION_KEY);
-    return data ? JSON.parse(data) : null;
+    const usuario = obtenerUsuarioActual();
+    if (!usuario) return null;
+    return { ...usuario, rol: usuario.rol === "ADMIN" ? "Admin" : "Usuario" };
 }
 
 export function cerrarSesion() {
-    sessionStorage.removeItem(SESION_KEY);
+    return cerrarSesionApi();
 }
 
 // ---------- Validación del registro ----------
-export function validarRegistro(datos, todos) {
+export function validarRegistro(datos, todos = []) {
     const { nombre, apellido, correo, contrasenia } = datos;
     const errores = {};
 
@@ -74,10 +76,9 @@ export function validarRegistro(datos, todos) {
 }
 
 // ---------- Registrar----------
+// El backend valida de nuevo, encripta la contraseña con BCrypt y siempre asigna el rol USUARIO
 export function registrarUsuario(datos) {
-    const lista = obtenerTodosUsuarios();
-    lista.push({ ...datos, rol: "Usuario" });
-    guardarTodosUsuarios(lista);
+    return api("/auth/registro", { metodo: "POST", cuerpo: datos });
 }
 
 // ---------- Editar perfil ----------

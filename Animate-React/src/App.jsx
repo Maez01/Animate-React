@@ -11,6 +11,7 @@ import Preventas from "./pages/Preventas";
 import Mangas from "./pages/Mangas";
 import Carrito from "./pages/Carrito";
 import Admin from "./pages/Admin";
+import RutaProtegida from "./components/RutaProtegida";
 
 function App() {
     return (
@@ -24,9 +25,9 @@ function App() {
                 <Route path="/preventas" element={<Preventas/>} />
                 <Route path="/login" element={<InicioSesion />} />
                 <Route path="/registro" element={<Registro />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route path="/perfil-admin" element={<PerfilAdmin />} />
-                <Route path="/perfil" element={<Perfil />} />
+                <Route path="/admin" element={<RutaProtegida soloAdmin><Admin /></RutaProtegida>} />
+                <Route path="/perfil-admin" element={<RutaProtegida soloAdmin><PerfilAdmin /></RutaProtegida>} />
+                <Route path="/perfil" element={<RutaProtegida><Perfil /></RutaProtegida>} />
                 <Route path="/carrito" element={<Carrito />} />
             </Routes>
         </BrowserRouter>
