@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Container, Button, Modal } from "react-bootstrap";
 import BarraNavegacion from "../components/BarraNavegacion";
@@ -7,7 +7,7 @@ import ItemCarrito from "../components/ItemCarrito";
 import { useCarrito } from "../context/carritoContext";
 import { formatearPrecio } from "../utils/formatoPrecio";
 import FormularioTarjeta from "../components/FormularioTarjeta";
-import { obtenerSesion } from "../utils/usuarios";
+import { useAuth } from "../context/authContext";
 import { obtenerSeleccionada, resumirTarjeta, textoTarjeta } from "../utils/tarjetas";
 import FormularioDireccion from "../components/FormularioDireccion";
 import { obtenerDireccionSeleccionada, crearDireccion, textoDireccion } from "../utils/direcciones";
@@ -17,9 +17,19 @@ function Carrito() {
     const [pedirTarjeta, setPedirTarjeta] = useState(false);
     const [direccionInvitado, setDireccionInvitado] = useState(null);
 
-        const sesion = obtenerSesion();
-        const tarjetaSeleccionada = sesion ? obtenerSeleccionada(sesion.correo) : null;
-        const direccionSeleccionada = sesion ? obtenerDireccionSeleccionada(sesion.correo) : null;
+                const { usuario: sesion } = useAuth();
+                const [seleccionadas, setSeleccionadas] = useState({ tarjeta: null, direccion: null });
+
+                // Con sesión, la tarjeta y la dirección se leen desde el backend (las elegidas en el perfil)
+                useEffect(() => {
+                    if (!sesion) return;
+                    Promise.all([obtenerSeleccionada(), obtenerDireccionSeleccionada()])
+                        .then(([tarjeta, direccion]) => setSeleccionadas({ tarjeta, direccion }))
+                        .catch(() => setSeleccionadas({ tarjeta: null, direccion: null }));
+                }, [sesion]);
+
+                const tarjetaSeleccionada = sesion ? seleccionadas.tarjeta : null;
+                const direccionSeleccionada = sesion ? seleccionadas.direccion : null;
 
         function manejarFinalizar() {
             if (carrito.length === 0) {
@@ -27,18 +37,18 @@ function Carrito() {
                 return;
             }
             if (sesion) {
-                finalizarCompra();
+                finalizarCompra(tarjetaSeleccionada, direccionSeleccionada);
             } else {
                 setPedirTarjeta(true);
             }
         }
 
-        function guardarDireccionInvitado(datos) {
+                function guardarDireccionInvitado(datos) {
                     setDireccionInvitado(crearDireccion(datos));
                 }
 
-                function pagarComoInvitado(datos) {
-                    const listo = finalizarCompra(resumirTarjeta(datos), direccionInvitado);
+                async function pagarComoInvitado(datos) {
+                    const listo = await finalizarCompra(resumirTarjeta(datos), direccionInvitado);
                     if (listo) cerrarModalInvitado();
                 }
 

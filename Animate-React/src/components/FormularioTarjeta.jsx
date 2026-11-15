@@ -7,6 +7,7 @@ const vacio = { numero: "", clave: "", propietario: "" };
 function FormularioTarjeta({ alGuardar, alCancelar, textoBoton = "Guardar tarjeta" }) {
     const [datos, setDatos] = useState(vacio);
     const [errores, setErrores] = useState({});
+    const [enviando, setEnviando] = useState(false);
 
     function cambiarCampo(e) {
         setDatos({ ...datos, [e.target.name]: e.target.value });
@@ -40,9 +41,10 @@ function FormularioTarjeta({ alGuardar, alCancelar, textoBoton = "Guardar tarjet
                     {errores[c.campo] && <span className="text-danger small d-block mt-1">{errores[c.campo]}</span>}
                 </Form.Group>
             ))}
+            {errores.general && <span className="text-danger small d-block mb-2">{errores.general}</span>}
             <div className="d-flex justify-content-end gap-2">
                 {alCancelar && <Button variant="secondary" onClick={alCancelar}>Cancelar</Button>}
-                <Button type="submit">{textoBoton}</Button>
+                <Button type="submit" disabled={enviando}>{enviando ? "Guardando..." : textoBoton}</Button>
             </div>
         </Form>
     );

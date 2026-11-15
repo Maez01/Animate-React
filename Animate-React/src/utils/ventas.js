@@ -1,44 +1,46 @@
+import { api } from "../services/api";
 import { textoDireccion } from "./direcciones";
-const VENTAS_KEY = "ventasAnimate";
 
-// Devuelve todas las ventas guardadas (o una lista vacía)
-export function obtenerVentas() {
-    const data = sessionStorage.getItem(VENTAS_KEY);
-    return data ? JSON.parse(data) : [];
-}
-
-// Devuelve solo las compras de un usuario, de la más nueva a la más antigua
-export function obtenerVentasDe(correo) {
-    return obtenerVentas()
-        .filter(v => v.comprador.toLowerCase() === correo.toLowerCase())
-        .reverse();
-}
-
-// Guarda una venta nueva con los productos del carrito y la tarjeta usada
-export function registrarVenta(carrito, total, comprador, tarjeta, direccion) {
-    const ventas = obtenerVentas();
-    ventas.push({
-        id: Date.now(),
-        fecha: new Date().toLocaleString("es-CL"),
-        comprador: comprador ? comprador.correo : "Invitado",
-        tarjeta: `**** ${tarjeta.ultimos4}`,
-        direccion: textoDireccion(direccion),
-        productos: carrito.map(item => ({
-            nombre: item.nombre,
-            cantidad: item.cantidad,
-            precio: item.precio,
-        })),
-        total,
-    });
-    sessionStorage.setItem(VENTAS_KEY, JSON.stringify(ventas));
-}
-
-// Si el usuario cambia su correo, sus compras pasan al correo nuevo
-export function cambiarCorreoVentas(correoAnterior, correoNuevo) {
-    const ventas = obtenerVentas().map(v =>
-        v.comprador.toLowerCase() === correoAnterior.toLowerCase()
-            ? { ...v, comprador: correoNuevo }
-            : v
+// Clave única para cada compra (Idempotency-Key). Si la misma compra se envía dos veces
+// (doble clic, conexión lenta), el backend reconoce la clave y no cobra ni descuenta stock otra vez.
+function nuevaClaveCompra() {
+    if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+    // randomUUID solo existe en HTTPS o localhost; en otra dirección se arma un UUID igual de válido
+    return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+        (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)
     );
-    sessionStorage.setItem(VENTAS_KEY, JSON.stringify(ventas));
+}
+
+// Envía la compra al backend. Solo viajan los ids y las cantidades:
+// el precio y el total los calcula el backend, así nadie puede cambiarlos desde el navegador.
+export function registrarVenta(carrito, tarjeta, direccion, conSesion) {
+    return api(conSesion ? "/pedidos" : "/pedidos/invitado", {
+        metodo: "POST",
+        cabeceras: { "Idempotency-Key": nuevaClaveCompra() },
+        cuerpo: {
+            items: carrito.map(item => ({
+                tipo: item.tipo.toUpperCase(),
+                productoId: item.productoId,
+                tomo: item.tipo === "manga" ? item.tomo : null,
+                cantidad: item.cantidad,
+            })),
+            direccion: textoDireccion(direccion),
+            tarjetaUltimos4: tarjeta.ultimos4,
+        },
+    });
+}
+
+// Compras del usuario con sesión, de la más nueva a la más antigua (PerfilUsuario)
+export function obtenerMisCompras() {
+    return api("/pedidos/mios");
+}
+
+// Todas las ventas; el backend solo responde si el usuario es ADMIN (PerfilAdmin)
+export function obtenerVentas() {
+    return api("/pedidos");
+}
+
+// El backend envía la fecha en formato ISO ("2026-11-15T03:44:00Z")
+export function formatearFecha(fechaIso) {
+    return new Date(fechaIso).toLocaleString("es-CL");
 }

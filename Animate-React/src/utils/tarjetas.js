@@ -1,27 +1,5 @@
-import {soloLetras} from "./usuarios";
-
-//Lectura y escritura en localStorage
-const TARJETAS_KEY = "tarjetasAnimate";
-
-function leerTodo(){
-    const data = sessionStorage.getItem(TARJETAS_KEY);
-    return data ? JSON.parse(data): {};
-}
-
-function guardarTodo(todo){
-    sessionStorage.setItem(TARJETAS_KEY, JSON.stringify(todo))
-}
-
-function datosDe(correo){
-    const todo = leerTodo();
-    return todo[correo.toLowerCase()] || {lista:[], seleccionada: null};
-}
-
-function guardarDatosDe(correo, datos){
-    const todo = leerTodo();
-    todo[correo.toLowerCase()] = datos;
-    guardarTodo(todo)
-}
+import { api } from "../services/api";
+import { soloLetras } from "./usuarios";
 
 //VALIDACION
 
@@ -38,7 +16,7 @@ export function validarTarjeta({numero, clave, propietario}){
     return errores;
 }
 
-//SOLO SE GUARDAN LOS ULTIMOS 4 DIGITOS DE LA TARJETA
+// Solo para la compra como invitado: deja únicamente los últimos 4 dígitos
 export function resumirTarjeta({numero,propietario}){
     const soloNumero = numero.replace(/\s/g, "");
     return {id: Date.now(), ultimos4: soloNumero.slice(-4), propietario: propietario.trim()};
@@ -49,48 +27,29 @@ export function textoTarjeta(tarjeta){
     return `**** **** **** ${tarjeta.ultimos4} (${tarjeta.propietario})`;
 }
 
-//TARJETAS DE EL USUARIO
-
-export function obtenerTarjetas(correo){
-    return datosDe(correo).lista;
+// ---------- Tarjetas del usuario con sesión (backend) ----------
+// El número completo y la clave se envían solo para validarlos: el backend guarda
+// únicamente los últimos 4 dígitos. Cada tarjeta llega como { id, ultimos4, propietario, seleccionada, texto }
+export function obtenerTarjetas() {
+    return api("/tarjetas");
 }
 
-export function obtenerSeleccionada(correo){
-    const datos = datosDe(correo);
-    return datos.lista.find(t => t.id === datos.seleccionada) || null;
+export async function obtenerSeleccionada() {
+    const lista = await obtenerTarjetas();
+    return lista.find(t => t.seleccionada) || null;
 }
 
-export function agregarTarjeta(correo, tarjeta){
-    const datos = datosDe(correo);
-    datos.lista.push(tarjeta);
-    if (datos.seleccionada === null) datos.seleccionada = tarjeta.id;
-    guardarDatosDe(correo, datos);
+export function agregarTarjeta({ numero, clave, propietario }) {
+    return api("/tarjetas", {
+        metodo: "POST",
+        cuerpo: { numero: numero.trim(), clave, propietario: propietario.trim() },
+    });
 }
 
-export function eliminarTarjeta(correo, id){
-    const datos = datosDe(correo);
-    datos.lista = datos.lista.filter(t => t.id !==id);
-    if (datos.seleccionada === id){
-        datos.seleccionada = datos.lista.length > 0 ? datos.lista[0].id : null;
-    }
-    guardarDatosDe(correo, datos);
+export function eliminarTarjeta(id) {
+    return api(`/tarjetas/${id}`, { metodo: "DELETE" });
 }
 
-export function seleccionarTarjeta(correo, id){
-    const datos = datosDe(correo);
-    datos.seleccionada = id;
-    guardarDatosDe(correo,datos);
-}
-
-export function cambiarCorreoTarjetas(correoAnterior, correoNuevo){
-    const anterior = correoAnterior.toLowerCase();
-    const nuevo = correoNuevo.toLowerCase();
-    if (anterior === nuevo) return;
-
-    const todo = leerTodo();
-    if (!todo[anterior]) return;
-
-    todo[nuevo] = todo[anterior];
-    delete todo[anterior];
-    guardarTodo(todo);
+export function seleccionarTarjeta(id) {
+    return api(`/tarjetas/${id}/seleccionar`, { metodo: "PUT" });
 }

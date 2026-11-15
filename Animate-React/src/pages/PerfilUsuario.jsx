@@ -1,12 +1,13 @@
-import { obtenerUsuario, cerrarSesion, buscarUsuario, actualizarUsuario, obtenerTodosUsuarios, validarRegistro } from "../utils/usuarios";
-import { obtenerTarjetas, obtenerSeleccionada, agregarTarjeta, eliminarTarjeta, seleccionarTarjeta, resumirTarjeta, textoTarjeta, cambiarCorreoTarjetas } from "../utils/tarjetas";
-import { obtenerDirecciones, obtenerDireccionSeleccionada, agregarDireccion, eliminarDireccion, seleccionarDireccion, crearDireccion, textoDireccion, cambiarCorreoDirecciones } from "../utils/direcciones";
-import { obtenerVentasDe, cambiarCorreoVentas } from "../utils/ventas";
+import { validarRegistro, confirmarContrasenia, editarMiPerfil } from "../utils/usuarios";
+import { obtenerTarjetas, agregarTarjeta, eliminarTarjeta, seleccionarTarjeta, textoTarjeta } from "../utils/tarjetas";
+import { obtenerDirecciones, agregarDireccion, eliminarDireccion, seleccionarDireccion, textoDireccion } from "../utils/direcciones";
+import { obtenerMisCompras, formatearFecha } from "../utils/ventas";
+import { useAuth } from "../context/authContext";
 import { formatearPrecio } from "../utils/formatoPrecio";
 import FormularioTarjeta from "../components/FormularioTarjeta";
 import FormularioDireccion from "../components/FormularioDireccion";
 import { Container, Card, Row, Col, Button, Modal, Form, ListGroup, Table } from "react-bootstrap";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Navigate, Link } from "react-router-dom";
 
 const titulos = {
@@ -19,142 +20,166 @@ const titulos = {
 
 function Perfil() {
 
-    const usuario = obtenerUsuario();
+        const { usuario, logout, refrescarSesion } = useAuth();
 
-    const [seccion, setSeccion] = useState(null);
-    const [verificado, setVerificado] = useState(false);
-    const [contraseniaIngresada, setContraseniaIngresada] = useState("");
-    const [errorContrasenia, setErrorContrasenia] = useState("");
-    const [datosEdit, setDatosEdit] = useState({ nombre: "", apellido: "", correo: "", contrasenia: "" });
-    const [erroresEdit, setErroresEdit] = useState({});
+        const [seccion, setSeccion] = useState(null);
+        const [verificado, setVerificado] = useState(false);
+        const [contraseniaIngresada, setContraseniaIngresada] = useState("");
+        const [errorContrasenia, setErrorContrasenia] = useState("");
+        const [datosEdit, setDatosEdit] = useState({ nombre: "", apellido: "", correo: "", contrasenia: "" });
+        const [erroresEdit, setErroresEdit] = useState({});
 
-    const [tarjetas, setTarjetas] = useState(() => usuario ? obtenerTarjetas(usuario.correo) : []);
-    const [idSeleccionada, setIdSeleccionada] = useState(() => {
-        const seleccionada = usuario ? obtenerSeleccionada(usuario.correo) : null;
-        return seleccionada ? seleccionada.id : "";
-    });
+        const [tarjetas, setTarjetas] = useState([]);
+        const [direcciones, setDirecciones] = useState([]);
+        const [misCompras, setMisCompras] = useState([]);
+        const [errorCarga, setErrorCarga] = useState("");
 
-    const [direcciones, setDirecciones] = useState(() => usuario ? obtenerDirecciones(usuario.correo) : []);
-    const [idDireccion, setIdDireccion] = useState(() => {
-        const seleccionada = usuario ? obtenerDireccionSeleccionada(usuario.correo) : null;
-        return seleccionada ? seleccionada.id : "";
-    });
+        const navigate = useNavigate();
 
-    const navigate = useNavigate();
+        // Al entrar al perfil se cargan tarjetas, direcciones y compras desde el backend
+        useEffect(() => {
+            Promise.all([obtenerTarjetas(), obtenerDirecciones(), obtenerMisCompras()])
+                .then(([listaTarjetas, listaDirecciones, compras]) => {
+                    setTarjetas(listaTarjetas);
+                    setDirecciones(listaDirecciones);
+                    setMisCompras(compras);
+                })
+                .catch(error => setErrorCarga(error.message));
+        }, []);
 
-    // Sin sesión -> al login; si es admin -> a su propio perfil
-    if (!usuario) return <Navigate to="/login" />;
-    if (usuario.rol === "Admin") return <Navigate to="/perfil-admin" />;
+        // RutaProtegida ya exige sesión; el administrador tiene su propio perfil
+        if (usuario?.rol === "ADMIN") return <Navigate to="/perfil-admin" />;
 
-    const misCompras = obtenerVentasDe(usuario.correo);
-    const totalGastado = misCompras.reduce((suma, c) => suma + c.total, 0);
+        // La seleccionada viene marcada desde el backend (seleccionada: true)
+        const idSeleccionada = tarjetas.find(t => t.seleccionada)?.id ?? "";
+        const idDireccion = direcciones.find(d => d.seleccionada)?.id ?? "";
+        const totalGastado = misCompras.reduce((suma, c) => suma + c.total, 0);
 
-    function manejarCerrarSesion() {
-        cerrarSesion();
-        navigate("/login");
-    }
-
-    // ---------- Editar perfil ----------
-    function verificarContrasenia(e) {
-        e.preventDefault();
-
-        if (contraseniaIngresada === "") {
-            setErrorContrasenia("campo vacio, ingresar contraseña");
-            return;
+        async function manejarCerrarSesion() {
+            await logout();
+            navigate("/login");
         }
 
-        const encontrado = buscarUsuario(usuario.correo, contraseniaIngresada);
-        if (!encontrado) {
-            setErrorContrasenia("Contraseña incorrecta");
-            return;
+        // Muestra el error en un aviso si una acción con el backend falla
+        async function ejecutar(accion) {
+            try {
+                await accion();
+            } catch (error) {
+                alert(error.message);
+            }
         }
 
-        setErrorContrasenia("");
-        setVerificado(true);
-        setDatosEdit({
-            nombre: encontrado.nombre,
-            apellido: encontrado.apellido,
-            correo: encontrado.correo,
-            contrasenia: "",
-        });
-    }
+        // ---------- Editar perfil ----------
+        async function verificarContrasenia(e) {
+            e.preventDefault();
 
-    function cambiarCampo(e) {
-        setDatosEdit({ ...datosEdit, [e.target.name]: e.target.value });
-    }
+            if (contraseniaIngresada === "") {
+                setErrorContrasenia("campo vacio, ingresar contraseña");
+                return;
+            }
 
-    function guardarCambios(e) {
-        e.preventDefault();
+            try {
+                await confirmarContrasenia(usuario.correo, contraseniaIngresada);
+            } catch (error) {
+                setErrorContrasenia(error.status === 401 ? "Contraseña incorrecta" : error.message);
+                return;
+            }
 
-        const limpios = {
-            nombre: datosEdit.nombre.trim(),
-            apellido: datosEdit.apellido.trim(),
-            correo: datosEdit.correo.trim(),
-            contrasenia: datosEdit.contrasenia === "" ? contraseniaIngresada : datosEdit.contrasenia,
-        };
-
-        const otros = obtenerTodosUsuarios().filter(
-            u => u.correo.toLowerCase() !== usuario.correo.toLowerCase()
-        );
-
-        const errores = validarRegistro(limpios, otros);
-        if (Object.keys(errores).length > 0) {
-            setErroresEdit(errores);
-            return;
+            setErrorContrasenia("");
+            setVerificado(true);
+            setDatosEdit({
+                nombre: usuario.nombre,
+                apellido: usuario.apellido,
+                correo: usuario.correo,
+                contrasenia: "",
+            });
         }
 
-        cambiarCorreoTarjetas(usuario.correo, limpios.correo);
-        cambiarCorreoDirecciones(usuario.correo, limpios.correo);
-        cambiarCorreoVentas(usuario.correo, limpios.correo);
-        actualizarUsuario(usuario.correo, limpios);
-        cerrarModal();
-    }
+        function cambiarCampo(e) {
+            setDatosEdit({ ...datosEdit, [e.target.name]: e.target.value });
+        }
 
-    // ---------- Tarjetas ----------
-    function recargarTarjetas() {
-        setTarjetas(obtenerTarjetas(usuario.correo));
-        const seleccionada = obtenerSeleccionada(usuario.correo);
-        setIdSeleccionada(seleccionada ? seleccionada.id : "");
-    }
+        async function guardarCambios(e) {
+            e.preventDefault();
 
-    function registrarTarjeta(datos) {
-        agregarTarjeta(usuario.correo, resumirTarjeta(datos));
-        recargarTarjetas();
-    }
+            const limpios = {
+                nombre: datosEdit.nombre.trim(),
+                apellido: datosEdit.apellido.trim(),
+                correo: datosEdit.correo.trim(),
+                contrasenia: datosEdit.contrasenia === "" ? contraseniaIngresada : datosEdit.contrasenia,
+            };
 
-    function quitarTarjeta(id) {
-        eliminarTarjeta(usuario.correo, id);
-        recargarTarjetas();
-    }
+            const errores = validarRegistro(limpios);
+            if (Object.keys(errores).length > 0) {
+                setErroresEdit(errores);
+                return;
+            }
 
-    function cambiarSeleccion(e) {
-        const id = Number(e.target.value);
-        seleccionarTarjeta(usuario.correo, id);
-        setIdSeleccionada(id);
-    }
+            try {
+                await editarMiPerfil({
+                    nombre: limpios.nombre,
+                    apellido: limpios.apellido,
+                    correo: limpios.correo,
+                    contraseniaActual: contraseniaIngresada,
+                    contraseniaNueva: datosEdit.contrasenia === "" ? null : datosEdit.contrasenia,
+                });
+                // Pide un token nuevo para que la sesión muestre el nombre y el correo actualizados
+                await refrescarSesion();
+                cerrarModal();
+            } catch (error) {
+                setErroresEdit(error.status === 409 ? { correo: error.message } : { general: error.message });
+            }
+        }
 
-    // ---------- Direcciones ----------
-    function recargarDirecciones() {
-        setDirecciones(obtenerDirecciones(usuario.correo));
-        const seleccionada = obtenerDireccionSeleccionada(usuario.correo);
-        setIdDireccion(seleccionada ? seleccionada.id : "");
-    }
+        // ---------- Tarjetas ----------
+        async function recargarTarjetas() {
+            setTarjetas(await obtenerTarjetas());
+        }
 
-    function registrarDireccion(datos) {
-        agregarDireccion(usuario.correo, crearDireccion(datos));
-        recargarDirecciones();
-    }
+        async function registrarTarjeta(datos) {
+            await agregarTarjeta(datos);
+            await recargarTarjetas();
+        }
 
-    function quitarDireccion(id) {
-        eliminarDireccion(usuario.correo, id);
-        recargarDirecciones();
-    }
+        function quitarTarjeta(id) {
+            ejecutar(async () => {
+                await eliminarTarjeta(id);
+                await recargarTarjetas();
+            });
+        }
 
-    function cambiarDireccion(e) {
-        const id = Number(e.target.value);
-        seleccionarDireccion(usuario.correo, id);
-        setIdDireccion(id);
-    }
+        function cambiarSeleccion(e) {
+            const id = Number(e.target.value);
+            ejecutar(async () => {
+                await seleccionarTarjeta(id);
+                await recargarTarjetas();
+            });
+        }
+
+        // ---------- Direcciones ----------
+        async function recargarDirecciones() {
+            setDirecciones(await obtenerDirecciones());
+        }
+
+        async function registrarDireccion(datos) {
+            await agregarDireccion(datos);
+            await recargarDirecciones();
+        }
+
+        function quitarDireccion(id) {
+            ejecutar(async () => {
+                await eliminarDireccion(id);
+                await recargarDirecciones();
+            });
+        }
+
+        function cambiarDireccion(e) {
+            const id = Number(e.target.value);
+            ejecutar(async () => {
+                await seleccionarDireccion(id);
+                await recargarDirecciones();
+            });
+        }
 
     function cerrarModal() {
         setSeccion(null);
@@ -180,6 +205,7 @@ function Perfil() {
                                 <p>Nombre: {usuario.nombre}</p>
                                 <p>Apellido: {usuario.apellido}</p>
                                 <p>Correo: {usuario.correo}</p>
+                                {errorCarga && <p className="text-danger">{errorCarga}</p>}
                             </Col>
                             <Col md={5}>
                                 <div className="d-grid gap-2">
@@ -258,6 +284,7 @@ function Perfil() {
                                         {erroresEdit[c.campo] && <span className="text-danger small d-block mt-1">{erroresEdit[c.campo]}</span>}
                                     </Form.Group>
                                 ))}
+                                {erroresEdit.general && <span className="text-danger small d-block mb-2">{erroresEdit.general}</span>}
                                 <div className="d-flex justify-content-end gap-2">
                                     <Button variant="secondary" onClick={cerrarModal}>Cancelar</Button>
                                     <Button type="submit">Guardar cambios</Button>
@@ -287,7 +314,7 @@ function Perfil() {
                                     <tbody>
                                         {misCompras.map(c => (
                                             <tr key={c.id}>
-                                                <td>{c.fecha}</td>
+                                                <td>{c.fecha}</td><td>{formatearFecha(c.fecha)}</td>
                                                 <td>
                                                     {c.productos.map((p, i) => (
                                                         <div key={i}>

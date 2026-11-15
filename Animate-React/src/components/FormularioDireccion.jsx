@@ -7,24 +7,34 @@ const vacio = { calle: "", referencia: "", comuna: "", region: "" };
 function FormularioDireccion({ alGuardar, alCancelar, textoBoton = "Guardar dirección" }) {
     const [datos, setDatos] = useState(vacio);
     const [errores, setErrores] = useState({});
+    const [enviando, setEnviando] = useState(false);
 
     function cambiarCampo(e) {
         setDatos({ ...datos, [e.target.name]: e.target.value });
     }
 
-    function manejarEnvio(e) {
-        e.preventDefault();
+     async function manejarEnvio(e) {
+            e.preventDefault();
 
-        const nuevosErrores = validarDireccion(datos);
-        if (Object.keys(nuevosErrores).length > 0) {
-            setErrores(nuevosErrores);
-            return;
-        }
+            const nuevosErrores = validarDireccion(datos);
+            if (Object.keys(nuevosErrores).length > 0) {
+                setErrores(nuevosErrores);
+                return;
+            }
 
-        alGuardar(datos);
-        setDatos(vacio);
-        setErrores({});
-    }
+            setEnviando(true);
+            try {
+                await alGuardar(datos);
+                setDatos(vacio);
+                setErrores({});
+            } catch (error) {
+                // Si el backend rechaza algún campo, el error aparece debajo de ese campo
+                const campos = error.campos || {};
+                setErrores(Object.keys(campos).length > 0 ? campos : { general: error.message });
+            } finally {
+                setEnviando(false);
+            }
+     }
 
     return (
         <Form onSubmit={manejarEnvio} noValidate>
@@ -62,9 +72,10 @@ function FormularioDireccion({ alGuardar, alCancelar, textoBoton = "Guardar dire
                 </Col>
             </Row>
 
+            {errores.general && <span className="text-danger small d-block mb-2">{errores.general}</span>}
             <div className="d-flex justify-content-end gap-2">
                 {alCancelar && <Button variant="secondary" onClick={alCancelar}>Cancelar</Button>}
-                <Button type="submit">{textoBoton}</Button>
+                <Button type="submit" disabled={enviando}>{enviando ? "Guardando..." : textoBoton}</Button>
             </div>
         </Form>
     );

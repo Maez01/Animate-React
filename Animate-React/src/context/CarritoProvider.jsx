@@ -10,9 +10,7 @@ import {
 import { formatearPrecio } from "../utils/formatoPrecio";
 import { obtenerStock, descontarStock } from "../utils/inventario";
 import { registrarVenta } from "../utils/ventas";
-import { obtenerSesion } from "../utils/usuarios";
-import { obtenerSeleccionada } from "../utils/tarjetas";
-import { obtenerDireccionSeleccionada } from "../utils/direcciones";
+import { useAuth } from "./authContext";
 
 const CARRITO_KEY = "carritoAnimate";
 
@@ -22,6 +20,7 @@ function leerCarritoGuardado() {
 }
 
 function CarritoProvider({ children }) {
+    const { usuario } = useAuth();
     const [carrito, setCarrito] = useState(leerCarritoGuardado);
 
     useEffect(() => {
@@ -53,37 +52,40 @@ function CarritoProvider({ children }) {
         setCarrito(eliminarItem(carrito, clave));
     }
 
-       function finalizarCompra(tarjetaInvitado, direccionInvitado) {
-           if (carrito.length === 0) {
-               alert("Tu carrito está vacío.");
-               return false;
+           // tarjeta y direccion: las seleccionadas en el perfil (con sesión) o las que escribió el invitado
+           async function finalizarCompra(tarjeta, direccion) {
+               if (carrito.length === 0) {
+                   alert("Tu carrito está vacío.");
+                   return false;
+               }
+
+               if (!tarjeta) {
+                   alert(usuario
+                       ? "Selecciona o registra una tarjeta en tu perfil antes de comprar."
+                       : "Debes ingresar una tarjeta para comprar.");
+                   return false;
+               }
+
+               if (!direccion) {
+                   alert(usuario
+                       ? "Selecciona o registra una dirección de envío en tu perfil antes de comprar."
+                       : "Debes ingresar una dirección de envío para comprar.");
+                   return false;
+               }
+
+               try {
+                   // El backend confirma precios y stock, descuenta el inventario y guarda el pedido
+                   const pedido = await registrarVenta(carrito, tarjeta, direccion, Boolean(usuario));
+                   // TEMPORAL: también se descuenta en el catálogo local hasta que se conecte el catálogo
+                   descontarStock(carrito);
+                   setCarrito([]);
+                   alert("¡Gracias por tu compra! Total: " + formatearPrecio(pedido.total));
+                   return true;
+               } catch (error) {
+                   alert(error.message);
+                   return false;
+               }
            }
-
-           const sesion = obtenerSesion();
-           const tarjeta = sesion ? obtenerSeleccionada(sesion.correo) : tarjetaInvitado;
-           const direccion = sesion ? obtenerDireccionSeleccionada(sesion.correo) : direccionInvitado;
-
-           if (!tarjeta) {
-               alert(sesion
-                   ? "Selecciona o registra una tarjeta en tu perfil antes de comprar."
-                   : "Debes ingresar una tarjeta para comprar.");
-               return false;
-           }
-
-           if (!direccion) {
-               alert(sesion
-                   ? "Selecciona o registra una dirección de envío en tu perfil antes de comprar."
-                   : "Debes ingresar una dirección de envío para comprar.");
-               return false;
-           }
-
-           const total = calcularTotal(carrito);
-           descontarStock(carrito);
-           registrarVenta(carrito, total, sesion, tarjeta, direccion);
-           setCarrito([]);
-           alert("¡Gracias por tu compra! Total: " + formatearPrecio(total));
-           return true;
-       }
 
     const valor = {
         carrito,

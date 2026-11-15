@@ -1,36 +1,44 @@
-import { obtenerUsuario, cerrarSesion, buscarUsuario, actualizarUsuario, obtenerTodosUsuarios, validarRegistro } from "../utils/usuarios";
-import { obtenerVentas } from "../utils/ventas";
+import { validarRegistro, confirmarContrasenia, editarMiPerfil } from "../utils/usuarios";
+import { obtenerVentas, formatearFecha } from "../utils/ventas";
 import { formatearPrecio } from "../utils/formatoPrecio";
 import { Container, Card, Row, Col, Button, Modal, Form, Table } from "react-bootstrap";
-import { useState } from "react";
-import { useNavigate, Navigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/authContext";
 
 function PerfilAdmin() {
 
-    const usuario = obtenerUsuario();
-    const ventas = obtenerVentas();
+        const { usuario, logout, refrescarSesion } = useAuth();
+        const [ventas, setVentas] = useState([]);
+        const [errorVentas, setErrorVentas] = useState("");
 
-    const [seccion, setSeccion] = useState(null);
-    const [verificado, setVerificado] = useState(false);
-    const [contraseniaIngresada, setContraseniaIngresada] = useState("");
-    const [errorContrasenia, setErrorContrasenia] = useState("");
-    const [datosEdit, setDatosEdit] = useState({ nombre: "", apellido: "", correo: "", contrasenia: "" });
-    const [erroresEdit, setErroresEdit] = useState({});
+        const [seccion, setSeccion] = useState(null);
+        const [verificado, setVerificado] = useState(false);
+        const [contraseniaIngresada, setContraseniaIngresada] = useState("");
+        const [errorContrasenia, setErrorContrasenia] = useState("");
+        const [datosEdit, setDatosEdit] = useState({ nombre: "", apellido: "", correo: "", contrasenia: "" });
+        const [erroresEdit, setErroresEdit] = useState({});
 
-    const navigate = useNavigate();
+        const navigate = useNavigate();
 
-    // Sin sesión -> al login; si no es admin -> a su perfil normal
-    if (!usuario) return <Navigate to="/login" />;
-    if (usuario.rol !== "Admin") return <Navigate to="/perfil" />;
+        // Las ventas vienen del microservicio de Pedidos (GET /api/pedidos, solo ADMIN)
+        useEffect(() => {
+            obtenerVentas()
+                .then(setVentas)
+                .catch(error => setErrorVentas(error.message));
+        }, []);
 
-    const totalVendido = ventas.reduce((suma, v) => suma + v.total, 0);
+        // RutaProtegida ya deja entrar solo a ADMIN; los pedidos rechazados no suman al total
+        const totalVendido = ventas
+            .filter(v => v.estado !== "RECHAZADO")
+            .reduce((suma, v) => suma + v.total, 0);
 
-    function manejarCerrarSesion() {
-        cerrarSesion();
+    async function manejarCerrarSesion() {
+        await logout();
         navigate("/login");
     }
 
-    function verificarContrasenia(e) {
+    async function verificarContrasenia(e) {
         e.preventDefault();
 
         if (contraseniaIngresada === "") {
@@ -38,48 +46,58 @@ function PerfilAdmin() {
             return;
         }
 
-        const encontrado = buscarUsuario(usuario.correo, contraseniaIngresada);
-        if (!encontrado) {
-            setErrorContrasenia("Contraseña incorrecta");
-            return;
+        try {
+            await confirmarContrasenia(usuario.correo, contraseniaIngresada);
+        } catch (error) {
+            setErrorContrasenia(error.status === 401 ? "Contraseña incorrecta" : error.message);
+        return;
         }
 
         setErrorContrasenia("");
         setVerificado(true);
         setDatosEdit({
-            nombre: encontrado.nombre,
-            apellido: encontrado.apellido,
-            correo: encontrado.correo,
+            nombre: usuario.nombre,
+            apellido: usuario.apellido,
+            correo: usuario.correo,
             contrasenia: "",
-        });
+            });
     }
+
 
     function cambiarCampo(e) {
         setDatosEdit({ ...datosEdit, [e.target.name]: e.target.value });
     }
 
-    function guardarCambios(e) {
-        e.preventDefault();
+    async function guardarCambios(e) {
+                e.preventDefault();
 
-        const limpios = {
-            nombre: datosEdit.nombre.trim(),
-            apellido: datosEdit.apellido.trim(),
-            correo: datosEdit.correo.trim(),
-            contrasenia: datosEdit.contrasenia === "" ? contraseniaIngresada : datosEdit.contrasenia,
-        };
+                const limpios = {
+                    nombre: datosEdit.nombre.trim(),
+                    apellido: datosEdit.apellido.trim(),
+                    correo: datosEdit.correo.trim(),
+                    contrasenia: datosEdit.contrasenia === "" ? contraseniaIngresada : datosEdit.contrasenia,
+                };
 
-        const otros = obtenerTodosUsuarios().filter(
-            u => u.correo.toLowerCase() !== usuario.correo.toLowerCase()
-        );
+                const errores = validarRegistro(limpios);
+                if (Object.keys(errores).length > 0) {
+                    setErroresEdit(errores);
+                    return;
+                }
 
-        const errores = validarRegistro(limpios, otros);
-        if (Object.keys(errores).length > 0) {
-            setErroresEdit(errores);
-            return;
-        }
-
-        actualizarUsuario(usuario.correo, limpios);
-        cerrarModal();
+                try {
+                    await editarMiPerfil({
+                        nombre: limpios.nombre,
+                        apellido: limpios.apellido,
+                        correo: limpios.correo,
+                        contraseniaActual: contraseniaIngresada,
+                        contraseniaNueva: datosEdit.contrasenia === "" ? null : datosEdit.contrasenia,
+                    });
+                    // Pide un token nuevo para que la sesión muestre el nombre y el correo actualizados
+                    await refrescarSesion();
+                    cerrarModal();
+                } catch (error) {
+                    setErroresEdit(error.status === 409 ? { correo: error.message } : { general: error.message });
+                }
     }
 
     function cerrarModal() {
@@ -162,6 +180,7 @@ function PerfilAdmin() {
                                         {erroresEdit[c.campo] && <span className="text-danger small d-block mt-1">{erroresEdit[c.campo]}</span>}
                                     </Form.Group>
                                 ))}
+                                {erroresEdit.general && <span className="text-danger small d-block mb-2">{erroresEdit.general}</span>}
                                 <div className="d-flex justify-content-end gap-2">
                                     <Button variant="secondary" onClick={cerrarModal}>Cancelar</Button>
                                     <Button type="submit">Guardar cambios</Button>
@@ -171,8 +190,10 @@ function PerfilAdmin() {
                     )}
 
                     {seccion === "ventas" && (
-                        ventas.length === 0 ? (
-                            <p>Todavía no hay ventas registradas.</p>
+                       errorVentas ? (
+                           <p className="text-danger">{errorVentas}</p>
+                                ) : ventas.length === 0 ? (
+                                    <p>Todavía no hay ventas registradas.</p>
                         ) : (
                             <>
                                 <p>
@@ -184,15 +205,17 @@ function PerfilAdmin() {
                                             <th>Fecha</th>
                                             <th>Comprador</th>
                                             <th>Productos</th>
+                                            <th>Estado</th>
                                             <th>Total</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {ventas.map(v => (
                                             <tr key={v.id}>
-                                                <td>{v.fecha}</td>
+                                                <td>{formatearFecha(v.fecha)}</td>
                                                 <td>{v.comprador}</td>
                                                 <td>{v.productos.map(p => `${p.nombre} x${p.cantidad}`).join(", ")}</td>
+                                                <td>{v.estado}</td>
                                                 <td>{formatearPrecio(v.total)}</td>
                                             </tr>
                                         ))}
