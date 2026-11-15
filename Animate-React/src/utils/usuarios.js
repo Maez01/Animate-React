@@ -1,11 +1,4 @@
-import { api, obtenerUsuarioActual, cerrarSesionApi } from "../services/api";
-const usuariosBase = [
-    { nombre: "Ana", apellido: "Gonzales", correo: "ana@email.com", contrasenia: "AdminAnimate#1", rol: "Admin" },
-    { nombre: "Carlos", apellido: "Calderon", correo: "carlos@email.com", contrasenia: "Carlos#Laraña1", rol: "Usuario"},
-];
-
-const USUARIOS_KEY = "usuarios";
-const SESION_KEY = "usuarioActual";
+import { api, obtenerUsuarioActual, cerrarSesionApi, iniciarSesion } from "../services/api";
 
 // Solo letras y espacios (incluye tildes y ñ)
 export const soloLetras = /^[A-Za-zÁÉÍÓÚÑáéíóúñ\s]+$/;
@@ -16,23 +9,9 @@ export const tieneMayuscula = /[A-ZÁÉÍÓÚÑ]/;
 // Al menos un carácter especial de estos: # $ % & *
 export const tieneEspecial = /[#$%&*]/;
 
-
-/// ---------- Lista de usuarios (sessionStorage) ----------
- export function obtenerTodosUsuarios() {
-     const guardado = sessionStorage.getItem(USUARIOS_KEY);
-     return guardado ? JSON.parse(guardado) : [...usuariosBase];
- }
-
- function guardarTodosUsuarios(lista) {
-     sessionStorage.setItem(USUARIOS_KEY, JSON.stringify(lista));
- }
-
 // ---------- Sesión ----------
-export function guardarSesion(usuario) {
-    const { nombre, apellido, correo, rol } = usuario;
-    sessionStorage.setItem(SESION_KEY, JSON.stringify({ nombre, apellido, correo, rol }));
-}
-
+// TEMPORAL: Admin.jsx y BarraAdmin.jsx todavía usan estas dos funciones y comparan
+// el rol con "Admin". Se quitan cuando se conecte el panel de administración.
 export function obtenerSesion() {
     const usuario = obtenerUsuarioActual();
     if (!usuario) return null;
@@ -44,7 +23,7 @@ export function cerrarSesion() {
 }
 
 // ---------- Validación del registro ----------
-export function validarRegistro(datos, todos = []) {
+export function validarRegistro(datos) {
     const { nombre, apellido, correo, contrasenia } = datos;
     const errores = {};
 
@@ -65,42 +44,23 @@ export function validarRegistro(datos, todos = []) {
     else if (!tieneEspecial.test(contrasenia))
         errores.contrasenia = "La contraseña debe tener al menos un carácter especial (# $ % & *)";
 
-    if (todos.some(u => u.nombre.toLowerCase() === nombre.toLowerCase()))
-        errores.nombre = "Ese nombre ya está registrado";
-    if (todos.some(u => u.apellido.toLowerCase() === apellido.toLowerCase()))
-        errores.apellido = "Ese apellido ya está registrado";
-    if (todos.some(u => u.correo.toLowerCase() === correo.toLowerCase()))
-        errores.correo = "Ese correo ya está registrado";
-
     return errores;
 }
 
-// ---------- Registrar----------
+// ---------- Registrar ----------
 // El backend valida de nuevo, encripta la contraseña con BCrypt y siempre asigna el rol USUARIO
 export function registrarUsuario(datos) {
     return api("/auth/registro", { metodo: "POST", cuerpo: datos });
 }
 
-// ---------- Editar perfil ----------
-export function actualizarUsuario(correoActual, nuevosDatos) {
-    const lista = obtenerTodosUsuarios().map(u =>
-        u.correo.toLowerCase() === correoActual.toLowerCase() ? { ...u, ...nuevosDatos } : u
-    );
-    guardarTodosUsuarios(lista);
-
-    const actualizado = lista.find(u => u.correo.toLowerCase() === nuevosDatos.correo.toLowerCase());
-    guardarSesion(actualizado);
+// ---------- Perfil propio ----------
+// Antes de editar el perfil se pide la contraseña de nuevo. La comprueba el backend
+// (con el mismo login), así ninguna contraseña queda guardada en el navegador.
+export async function confirmarContrasenia(correo, contrasenia) {
+    await iniciarSesion(correo, contrasenia);
 }
 
-// ---------- Login ----------
-export function buscarUsuario(correo, contrasenia) {
-    const usuario = obtenerTodosUsuarios().find(
-        u => u.correo.toLowerCase() === correo.toLowerCase() && u.contrasenia === contrasenia
-    );
-    return usuario || null;
-}
-
-export function obtenerUsuario() {
-    const sesion = obtenerSesion();
-    return sesion ? sesion : null;
+// datos: { nombre, apellido, correo, contraseniaActual, contraseniaNueva }
+export function editarMiPerfil(datos) {
+    return api("/usuarios/me", { metodo: "PUT", cuerpo: datos });
 }
