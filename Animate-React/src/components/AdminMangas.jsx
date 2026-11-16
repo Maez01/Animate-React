@@ -1,21 +1,13 @@
-import { useState, useEffect } from "react";
+import {useState, useEffect} from "react";
 import ModalTomosAdmin from "./ModalTomosManga";
-import { GENEROS_MANGA } from "../utils/generosManga";
+import {GENEROS_MANGA} from "../utils/generosManga";
+import ModalEditarManga from "./ModalEditarManga";
 import {
-    obtenerCatalogoCompleto,
-    obtenerPapelera,
-    agregarManga,
-    eliminarManga,
-    restaurarManga,
+    obtenerCatalogoCompleto, obtenerPapelera, agregarManga, eliminarManga, restaurarManga,
 } from "../utils/catalogoMangas";
 
 const formularioVacio = {
-    titulo: "",
-    genero: "shonen",
-    sinopsis: "",
-    imgPortada: "",
-    precio: "",
-    stock: "",
+    titulo: "", genero: "shonen", sinopsis: "", imgPortada: "", precio: "", stock: "",
 };
 
 function AdminMangas() {
@@ -24,6 +16,7 @@ function AdminMangas() {
     const [formulario, setFormulario] = useState(formularioVacio);
     const [error, setError] = useState("");
     const [mangaIdAbierto, setMangaIdAbierto] = useState(null);
+    const [mangaEditando, setMangaEditando] = useState(null);
 
     const mangaAbierto = mangas.find(m => m.id === mangaIdAbierto) || null;
 
@@ -55,7 +48,7 @@ function AdminMangas() {
     }
 
     function manejarCambio(e) {
-        setFormulario({ ...formulario, [e.target.name]: e.target.value });
+        setFormulario({...formulario, [e.target.name]: e.target.value});
     }
 
     function manejarAgregar(e) {
@@ -77,7 +70,7 @@ function AdminMangas() {
         }
 
         ejecutar(async () => {
-            await agregarManga({ titulo, genero: formulario.genero, sinopsis, imgPortada, precio, stock });
+            await agregarManga({titulo, genero: formulario.genero, sinopsis, imgPortada, precio, stock});
             setFormulario(formularioVacio);
         });
     }
@@ -92,8 +85,7 @@ function AdminMangas() {
         ejecutar(() => restaurarManga(id));
     }
 
-    return (
-        <>
+    return (<>
             <div className="card shadow-sm mb-4">
                 <div className="card-body">
                     <h5 className="card-title fw-bold mb-3">Agregar nuevo manga</h5>
@@ -102,36 +94,35 @@ function AdminMangas() {
                             <div className="col-md-6">
                                 <label className="form-label">Título</label>
                                 <input type="text" className="form-control" name="titulo"
-                                    value={formulario.titulo} onChange={manejarCambio} />
+                                       value={formulario.titulo} onChange={manejarCambio}/>
                             </div>
                             <div className="col-md-6">
                                 <label className="form-label">Género</label>
                                 <select className="form-select" name="genero"
-                                    value={formulario.genero} onChange={manejarCambio}>
-                                    {GENEROS_MANGA.map(g => (
-                                        <option key={g.valor} value={g.valor}>{g.texto}</option>
-                                    ))}
+                                        value={formulario.genero} onChange={manejarCambio}>
+                                    {GENEROS_MANGA.map(g => (<option key={g.valor} value={g.valor}>{g.texto}</option>))}
                                 </select>
                             </div>
                             <div className="col-12">
                                 <label className="form-label">Sinopsis</label>
                                 <textarea className="form-control" rows="2" name="sinopsis"
-                                    value={formulario.sinopsis} onChange={manejarCambio} />
+                                          value={formulario.sinopsis} onChange={manejarCambio}/>
                             </div>
                             <div className="col-md-6">
                                 <label className="form-label">Imagen de portada (ruta)</label>
-                                <input type="text" className="form-control" name="imgPortada" placeholder="Ej: /Imagenes/Mangas/nuevo-T1.jpg"
-                                    value={formulario.imgPortada} onChange={manejarCambio} />
+                                <input type="text" className="form-control" name="imgPortada"
+                                       placeholder="Ej: /Imagenes/Mangas/nuevo-T1.jpg"
+                                       value={formulario.imgPortada} onChange={manejarCambio}/>
                             </div>
                             <div className="col-md-3">
                                 <label className="form-label">Precio (tomo 1)</label>
                                 <input type="number" min="0" className="form-control" name="precio"
-                                    value={formulario.precio} onChange={manejarCambio} />
+                                       value={formulario.precio} onChange={manejarCambio}/>
                             </div>
                             <div className="col-md-3">
                                 <label className="form-label">Stock (tomo 1)</label>
                                 <input type="number" min="0" className="form-control" name="stock"
-                                    value={formulario.stock} onChange={manejarCambio} />
+                                       value={formulario.stock} onChange={manejarCambio}/>
                             </div>
                         </div>
                         {error && <div className="text-danger mt-2">{error}</div>}
@@ -146,38 +137,43 @@ function AdminMangas() {
                     <div className="table-responsive">
                         <table className="table align-middle">
                             <thead>
-                                <tr>
-                                    <th>Portada</th>
-                                    <th>Título</th>
-                                    <th>Género</th>
-                                    <th>Tomos</th>
-                                    <th></th>
-                                </tr>
+                            <tr>
+                                <th>Portada</th>
+                                <th>Título</th>
+                                <th>Género</th>
+                                <th>Tomos</th>
+                                <th></th>
+                            </tr>
                             </thead>
                             <tbody>
-                                {mangas.length === 0 && (
-                                    <tr>
-                                        <td colSpan="5" className="text-center text-muted">No quedan mangas en el catálogo.</td>
-                                    </tr>
-                                )}
-                                {mangas.map(manga => (
-                                    <tr key={manga.id}>
-                                        <td>
-                                            <img src={manga.imgPortada} alt={manga.titulo} style={{ width: "50px", height: "65px", objectFit: "cover", borderRadius: "4px" }} />
-                                        </td>
-                                        <td>{manga.titulo}</td>
-                                        <td className="text-uppercase small">{manga.genero}</td>
-                                        <td>{manga.volumenes.length}</td>
-                                        <td className="text-nowrap">
-                                            <button className="btn btn-outline-primary btn-sm me-1" onClick={() => setMangaIdAbierto(manga.id)}>
-                                                Gestionar tomos
-                                            </button>
-                                            <button className="btn btn-outline-danger btn-sm" onClick={() => manejarEliminar(manga)}>
-                                                Eliminar
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
+                            {mangas.length === 0 && (<tr>
+                                    <td colSpan="5" className="text-center text-muted">No quedan mangas en el
+                                        catálogo.
+                                    </td>
+                                </tr>)}
+                            {mangas.map(manga => (<tr key={manga.id}>
+                                    <td>
+                                        <img src={manga.imgPortada} alt={manga.titulo} style={{
+                                            width: "50px", height: "65px", objectFit: "cover", borderRadius: "4px"
+                                        }}/>
+                                    </td>
+                                    <td>{manga.titulo}</td>
+                                    <td className="text-uppercase small">{manga.genero}</td>
+                                    <td>{manga.volumenes.length}</td>
+                                    <td className="text-nowrap">
+                                        <button className="btn btn-outline-secondary btn-sm me-1" onClick={() => setMangaEditando(manga)}>
+                                            Editar
+                                        </button>
+                                        <button className="btn btn-outline-primary btn-sm me-1"
+                                                onClick={() => setMangaIdAbierto(manga.id)}>
+                                            Gestionar tomos
+                                        </button>
+                                        <button className="btn btn-outline-danger btn-sm"
+                                                onClick={() => manejarEliminar(manga)}>
+                                            Eliminar
+                                        </button>
+                                    </td>
+                                </tr>))}
                             </tbody>
                         </table>
                     </div>
@@ -187,46 +183,61 @@ function AdminMangas() {
             <div className="card shadow-sm">
                 <div className="card-body">
                     <h5 className="card-title fw-bold mb-3">Papelera de mangas</h5>
-                    <p className="text-muted small mb-3">Los mangas eliminados quedan aquí, no se borran para siempre. Puedes restaurarlos cuando quieras.</p>
+                    <p className="text-muted small mb-3">Los mangas eliminados quedan aquí, no se borran para siempre.
+                        Puedes restaurarlos cuando quieras.</p>
                     <div className="table-responsive">
                         <table className="table align-middle">
                             <thead>
-                                <tr>
-                                    <th>Portada</th>
-                                    <th>Título</th>
-                                    <th>Género</th>
-                                    <th></th>
-                                </tr>
+                            <tr>
+                                <th>Portada</th>
+                                <th>Título</th>
+                                <th>Género</th>
+                                <th></th>
+                            </tr>
                             </thead>
                             <tbody>
-                                {papelera.length === 0 && (
-                                    <tr>
-                                        <td colSpan="4" className="text-center text-muted">La papelera está vacía.</td>
-                                    </tr>
-                                )}
-                                {papelera.map(manga => (
-                                    <tr key={manga.id}>
-                                        <td>
-                                            <img src={manga.imgPortada} alt={manga.titulo} style={{ width: "50px", height: "65px", objectFit: "cover", borderRadius: "4px", opacity: 0.6 }} />
-                                        </td>
-                                        <td className="text-muted"><del>{manga.titulo}</del></td>
-                                        <td className="text-muted text-uppercase small">{manga.genero}</td>
-                                        <td>
-                                            <button className="btn btn-outline-success btn-sm fw-bold" onClick={() => manejarRestaurar(manga.id)}>
-                                                Restaurar
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
+                            {papelera.length === 0 && (<tr>
+                                    <td colSpan="4" className="text-center text-muted">La papelera está vacía.</td>
+                                </tr>)}
+                            {papelera.map(manga => (<tr key={manga.id}>
+                                    <td>
+                                        <img src={manga.imgPortada} alt={manga.titulo} style={{
+                                            width: "50px",
+                                            height: "65px",
+                                            objectFit: "cover",
+                                            borderRadius: "4px",
+                                            opacity: 0.6
+                                        }}/>
+                                    </td>
+                                    <td className="text-muted">
+                                        <del>{manga.titulo}</del>
+                                    </td>
+                                    <td className="text-muted text-uppercase small">{manga.genero}</td>
+                                    <td>
+                                        <button className="btn btn-outline-success btn-sm fw-bold"
+                                                onClick={() => manejarRestaurar(manga.id)}>
+                                            Restaurar
+                                        </button>
+                                    </td>
+                                </tr>))}
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <ModalTomosAdmin manga={mangaAbierto} alCerrar={() => setMangaIdAbierto(null)} alCambiar={recargar} />
-        </>
-    );
+            <ModalTomosAdmin manga={mangaAbierto} alCerrar={() => setMangaIdAbierto(null)} alCambiar={recargar}/>
+
+            {mangaEditando && (<ModalEditarManga
+                    key={mangaEditando.id}
+                    manga={mangaEditando}
+                    alCerrar={() => setMangaEditando(null)}
+                    alGuardar={() => {
+                        setMangaEditando(null);
+                        recargar();
+                    }}
+                />)}
+        </>);
 }
 
 export default AdminMangas;

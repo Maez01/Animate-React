@@ -23,6 +23,11 @@ export function restaurarManga(id) {
     return api(`/mangas/${id}/restaurar`, { metodo: "PUT" });
 }
 
+// datos: { titulo, genero, sinopsis, imgPortada } (los tomos se editan aparte)
+export function editarManga(id, datos) {
+    return api(`/mangas/${id}`, { metodo: "PUT", cuerpo: datos });
+}
+
 // El número del tomo lo asigna el backend (el siguiente al mayor)
 export function agregarTomo(mangaId, datos) {
     return api(`/mangas/${mangaId}/tomos`, { metodo: "POST", cuerpo: datos });
