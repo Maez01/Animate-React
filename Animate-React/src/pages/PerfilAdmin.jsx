@@ -1,5 +1,5 @@
 import { validarRegistro, confirmarContrasenia, editarMiPerfil } from "../utils/usuarios";
-import { obtenerVentas, formatearFecha } from "../utils/ventas";
+import { obtenerVentas, formatearFecha, cambiarEstadoPedido, SIGUIENTE_ESTADO } from "../utils/ventas";
 import { formatearPrecio } from "../utils/formatoPrecio";
 import { Container, Card, Row, Col, Button, Modal, Form, Table } from "react-bootstrap";
 import { useState, useEffect } from "react";
@@ -32,6 +32,19 @@ function PerfilAdmin() {
         const totalVendido = ventas
             .filter(v => v.estado !== "RECHAZADO")
             .reduce((suma, v) => suma + v.total, 0);
+
+    // Avanza el pedido al siguiente estado y reemplaza solo esa venta en la lista
+    async function avanzarEstado(venta) {
+        const siguiente = SIGUIENTE_ESTADO[venta.estado];
+        if (!window.confirm(`¿Marcar el pedido de ${venta.comprador} como ${siguiente}?`)) return;
+
+        try {
+            const actualizada = await cambiarEstadoPedido(venta.id, siguiente);
+            setVentas(lista => lista.map(v => (v.id === actualizada.id ? actualizada : v)));
+        } catch (error) {
+            alert(error.message);
+        }
+    }
 
     async function manejarCerrarSesion() {
         await logout();
@@ -210,15 +223,23 @@ function PerfilAdmin() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {ventas.map(v => (
-                                            <tr key={v.id}>
-                                                <td>{formatearFecha(v.fecha)}</td>
-                                                <td>{v.comprador}</td>
-                                                <td>{v.productos.map(p => `${p.nombre} x${p.cantidad}`).join(", ")}</td>
-                                                <td>{v.estado}</td>
-                                                <td>{formatearPrecio(v.total)}</td>
-                                            </tr>
-                                        ))}
+                                    {ventas.map(v => (
+                                        <tr key={v.id}>
+                                            <td>{formatearFecha(v.fecha)}</td>
+                                            <td>{v.comprador}</td>
+                                            <td>{v.productos.map(p => `${p.nombre} x${p.cantidad}`).join(", ")}</td>
+                                            <td className="text-nowrap">
+                                                {v.estado}
+                                                {SIGUIENTE_ESTADO[v.estado] && (
+                                                    <Button size="sm" variant="outline-light" className="ms-2"
+                                                            onClick={() => avanzarEstado(v)}>
+                                                        Marcar {SIGUIENTE_ESTADO[v.estado].toLowerCase()}
+                                                    </Button>
+                                                )}
+                                            </td>
+                                            <td>{formatearPrecio(v.total)}</td>
+                                        </tr>
+                                    ))}
                                     </tbody>
                                 </Table>
                             </>
