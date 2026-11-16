@@ -5,6 +5,7 @@ import TarjetaFigura from "../components/TarjetaFiguras";
 import { obtenerCatalogoFiguras } from "../utils/catalogoFiguras";
 import { useCarrito } from "../context/carritoContext";
 import { crearClave } from "../utils/carrito";
+import { TIPOS_FIGURA } from "../utils/tiposFigura";
 
 function Figuras(){
     const [busqueda, setBusqueda] = useState("");
@@ -65,8 +66,9 @@ function Figuras(){
                     <div className="col-md-4">
                         <select className="form-select" value={tipo} onChange={e => setTipo(e.target.value)}>
                             <option value = "todos">Todos los tipos</option>
-                            <option value = "Figura a escala">Figura a escala</option>
-                            <option value = "Nendoroid">Nendoroid</option>
+                            {TIPOS_FIGURA.map(t => (
+                                <option key={t} value={t}>{t}</option>
+                            ))}
                         </select>
                     </div>
                     <div className="col-md-4">

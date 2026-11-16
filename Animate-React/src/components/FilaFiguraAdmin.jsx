@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function FilaFiguraAdmin({figura, alGuardar, alEliminar, alVerGaleria}){
+function FilaFiguraAdmin({figura, alGuardar, alEliminar, alVerGaleria, alEditar}){
     const [precio, setPrecio] = useState(figura.precio);
     const [stock, setStock] = useState(figura.stock);
 
@@ -33,6 +33,7 @@ function FilaFiguraAdmin({figura, alGuardar, alEliminar, alVerGaleria}){
             </td>
             <td className="text-nowrap">
                 <button className="btn btn-outline-success btn-sm me-1" onClick={manejarGuardar}>Guardar</button>
+                <button className="btn btn-outline-secondary btn-sm me-1" onClick={() => alEditar(figura)}>Editar</button>
                 <button className="btn btn-outline-primary btn-sm me-1" onClick={() => alVerGaleria(figura)}>Galería</button>
                 <button className="btn btn-outline-danger btn-sm" onClick={()=> alEliminar(figura)}>Eliminar</button>
             </td>

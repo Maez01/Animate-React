@@ -1,6 +1,8 @@
 import { useState } from "react";
 import FilaFiguraAdmin from "./FilaFiguraAdmin";
 import ModalGaleriaAdmin from "./ModalGaleriaAdmin";
+import ModalEditarFigura from "./ModalEditarFigura";
+import { TIPOS_FIGURA } from "../utils/tiposFigura";
 import{
     obtenerCatalogoFiguras,
     obtenerPapeleraFiguras,
@@ -26,6 +28,7 @@ function AdminFiguras(){
     const [error, setError] = useState("");
     const [figuraIdAbierta, setFiguraIdAbierta] = useState(null);
     const figuraAbierta = figuras.find(f => f.id === figuraIdAbierta) || null;
+    const [figuraEditando, setFiguraEditando] = useState(null);
 
     function recargar(){
         setFiguras(obtenerCatalogoFiguras());
@@ -98,8 +101,9 @@ function AdminFiguras(){
                             <label className="form-label">Tipo de figura</label>
                             <select className="form-select" name="tipoFigura"
                             value={formulario.tipoFigura} onChange={manejarCambio}>
-                                <option value="Figura a escala">Figura a escala</option>
-                                <option value="Nendoroid">Nendoroid</option>
+                                {TIPOS_FIGURA.map(t => (
+                                    <option key={t} value={t}>{t}</option>
+                                ))}
                             </select>
                         </div>
                         <div className="col-md-6">
@@ -148,7 +152,7 @@ function AdminFiguras(){
                             )}
 
                             {figuras.map(figura => (
-                                <FilaFiguraAdmin key={figura.id} figura={figura} alGuardar={manejarGuardar} alEliminar={manejarEliminar} alVerGaleria={figura=> setFiguraIdAbierta(figura.id)}/>
+                                <FilaFiguraAdmin key={figura.id} figura={figura} alGuardar={manejarGuardar} alEliminar={manejarEliminar} alVerGaleria={figura=> setFiguraIdAbierta(figura.id)} alEditar={setFiguraEditando}/>
                             ))}
                         </tbody>
                     </table>
@@ -196,6 +200,18 @@ function AdminFiguras(){
             </div>
         </div> 
         <ModalGaleriaAdmin figura={figuraAbierta} alCerrar={() => setFiguraIdAbierta(null)} alCambiar={recargar} />
+
+            {figuraEditando && (
+                <ModalEditarFigura
+                    key={figuraEditando.id}
+                    figura={figuraEditando}
+                    alCerrar={() => setFiguraEditando(null)}
+                    alGuardar={() => {
+                        setFiguraEditando(null);
+                        recargar();
+                    }}
+                />
+            )}
         </>
     )
 }

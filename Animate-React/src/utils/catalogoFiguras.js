@@ -21,6 +21,11 @@ export function restaurarFigura(id) {
     return api(`/figuras/${id}/restaurar`, { metodo: "PUT" });
 }
 
+// Edita la figura completa. El backend pide todos los datos, incluidos precio y stock.
+export function editarFigura(id, datos) {
+    return api(`/figuras/${id}`, { metodo: "PUT", cuerpo: datos });
+}
+
 export function cambiarPrecioYStockFigura(id, precio, stock) {
     return api(`/figuras/${id}/precio-stock`, { metodo: "PUT", cuerpo: { precio, stock } });
 }
