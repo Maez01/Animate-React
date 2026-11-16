@@ -65,7 +65,7 @@ async function leerRespuesta(res){
     if (res.status === 204) return null;
 
     const texto = await res.text();
-    let datos = null;
+    let datos;
     try{
         datos = texto ? JSON.parse(texto) : null;
     } catch {
