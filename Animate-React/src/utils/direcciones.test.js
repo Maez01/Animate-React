@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { api } from "../services/api";
 import {
     regiones,
     validarDireccion,
@@ -9,10 +10,15 @@ import {
     agregarDireccion,
     eliminarDireccion,
     seleccionarDireccion,
-    cambiarCorreoDirecciones,
 } from "./direcciones";
 
-const correo = "ana@email.com";
+// La conexión con el backend se reemplaza por una función simulada
+vi.mock("../services/api", () => ({ api: vi.fn() }));
+
+beforeEach(() => {
+    api.mockReset();
+    api.mockResolvedValue({});
+});
 const direccion = (id) => ({ id, calle: `Calle ${id}`, referencia: "", comuna: "Viña del Mar", region: "Valparaíso" });
 const datosValidos = { calle: "Av. Libertad 1234", referencia: "", comuna: "Viña del Mar", region: "Valparaíso" };
 
@@ -57,64 +63,40 @@ describe("validar y crear direcciones", () => {
     });
 });
 
-describe("direcciones de un usuario", () => {
-    it("sin direcciones no hay ninguna seleccionada", () => {
-        expect(obtenerDirecciones(correo)).toEqual([]);
-        expect(obtenerDireccionSeleccionada(correo)).toBeNull();
+describe("direcciones del usuario con sesión (backend)", () => {
+    it("obtenerDirecciones pide la lista al backend", async () => {
+        api.mockResolvedValue([direccion(1), direccion(2)]);
+
+        expect(await obtenerDirecciones()).toHaveLength(2);
+        expect(api).toHaveBeenCalledWith("/direcciones");
     });
 
-    it("la primera dirección queda seleccionada, y el correo no distingue mayúsculas", () => {
-        agregarDireccion(correo, direccion(1));
-        agregarDireccion("ANA@email.com", direccion(2));
+    it("obtenerDireccionSeleccionada devuelve la dirección marcada por el backend", async () => {
+        api.mockResolvedValue([direccion(1), { ...direccion(2), seleccionada: true }]);
 
-        expect(obtenerDirecciones(correo)).toHaveLength(2);
-        expect(obtenerDireccionSeleccionada(correo).id).toBe(1);
+        expect((await obtenerDireccionSeleccionada()).id).toBe(2);
     });
 
-    it("permite elegir otra dirección", () => {
-        agregarDireccion(correo, direccion(1));
-        agregarDireccion(correo, direccion(2));
+    it("obtenerDireccionSeleccionada devuelve null si ninguna está seleccionada", async () => {
+        api.mockResolvedValue([direccion(1)]);
 
-        seleccionarDireccion(correo, 2);
-        expect(obtenerDireccionSeleccionada(correo).id).toBe(2);
+        expect(await obtenerDireccionSeleccionada()).toBeNull();
     });
 
-    it("al eliminar la seleccionada pasa a la primera que quede, o a ninguna", () => {
-        agregarDireccion(correo, direccion(1));
-        agregarDireccion(correo, direccion(2));
-        seleccionarDireccion(correo, 2);
+    it("agregarDireccion envía los datos sin espacios sobrantes", async () => {
+        await agregarDireccion({ calle: " Av. Libertad 1234 ", referencia: " Depto 502 ", comuna: " Viña del Mar ", region: "Valparaíso" });
 
-        eliminarDireccion(correo, 2);
-        expect(obtenerDireccionSeleccionada(correo).id).toBe(1);
-
-        eliminarDireccion(correo, 1);
-        expect(obtenerDireccionSeleccionada(correo)).toBeNull();
+        expect(api).toHaveBeenCalledWith("/direcciones", {
+            metodo: "POST",
+            cuerpo: { calle: "Av. Libertad 1234", referencia: "Depto 502", comuna: "Viña del Mar", region: "Valparaíso" },
+        });
     });
 
-    it("eliminar una dirección que no está seleccionada mantiene la selección", () => {
-        agregarDireccion(correo, direccion(1));
-        agregarDireccion(correo, direccion(2));
+    it("eliminarDireccion y seleccionarDireccion usan el id en la ruta", async () => {
+        await eliminarDireccion(5);
+        await seleccionarDireccion(7);
 
-        eliminarDireccion(correo, 2);
-        expect(obtenerDireccionSeleccionada(correo).id).toBe(1);
-    });
-
-    it("traspasa las direcciones al cambiar de correo", () => {
-        agregarDireccion(correo, direccion(1));
-
-        cambiarCorreoDirecciones(correo, "ana.nueva@email.com");
-
-        expect(obtenerDirecciones(correo)).toHaveLength(0);
-        expect(obtenerDirecciones("ana.nueva@email.com")).toHaveLength(1);
-    });
-
-    it("no hace nada si el correo es el mismo o si no tenía direcciones", () => {
-        agregarDireccion(correo, direccion(1));
-
-        cambiarCorreoDirecciones(correo, "ANA@EMAIL.COM");
-        cambiarCorreoDirecciones("nadie@email.com", "otro@email.com");
-
-        expect(obtenerDirecciones(correo)).toHaveLength(1);
-        expect(obtenerDirecciones("otro@email.com")).toHaveLength(0);
+        expect(api).toHaveBeenNthCalledWith(1, "/direcciones/5", { metodo: "DELETE" });
+        expect(api).toHaveBeenNthCalledWith(2, "/direcciones/7/seleccionar", { metodo: "PUT" });
     });
 });
