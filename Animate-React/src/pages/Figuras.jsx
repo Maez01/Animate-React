@@ -1,6 +1,6 @@
 import BarraNavegacion from "../components/BarraNavegacion";
 import Footer from "../components/Footer";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TarjetaFigura from "../components/TarjetaFiguras";
 import { obtenerCatalogoFiguras } from "../utils/catalogoFiguras";
 import { useCarrito } from "../context/carritoContext";
@@ -11,6 +11,17 @@ function Figuras(){
     const [tipo, setTipo] = useState("todos");
     const [orden, setOrden] = useState("predeterminado");
     const { agregar } = useCarrito();
+    const [catalogo, setCatalogo] = useState([]);
+    const [cargando, setCargando] = useState(true);
+    const [errorCarga, setErrorCarga] = useState("");
+
+    // Pide las figuras al backend al abrir la página
+    useEffect(() => {
+        obtenerCatalogoFiguras()
+            .then(setCatalogo)
+            .catch(error => setErrorCarga(error.message))
+            .finally(() => setCargando(false));
+    }, []);
 
     function comprarFigura(figura) {
         return agregar({
@@ -19,10 +30,11 @@ function Figuras(){
             productoId: figura.id,
             nombre: figura.nombre,
             precio: figura.precio,
+            stock: figura.stock,
             img: figura.imgPortada,
         });
     }
-    const filtradas = obtenerCatalogoFiguras().filter(figura => {
+    const filtradas = catalogo.filter(figura => {
         const cumpleTipo = tipo === "todos" || figura.tipoFigura === tipo;
         const cumpleBusqueda = figura.nombre.toLowerCase().includes(busqueda.toLowerCase());
         return cumpleTipo && cumpleBusqueda;
@@ -72,7 +84,7 @@ function Figuras(){
             <div className="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
                 {filtradas.length === 0 &&(
                     <p className="text-center col-12 my-5 text-muted fs-5">
-                        Busqueda sin resultados 
+                        {cargando ? "Cargando figuras..." : errorCarga || "Busqueda sin resultados"}
                     </p>
                 )}
                 {filtradas.map(figura => (

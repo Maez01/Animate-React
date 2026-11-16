@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Container, Row, Col } from "react-bootstrap";
 import BarraNavegacion from "../components/BarraNavegacion";
@@ -13,7 +13,9 @@ import { crearClave } from "../utils/carrito";
 
 function Mangas() {
     const [parametros] = useSearchParams();
-    const [catalogo] = useState(obtenerCatalogoCompleto);
+    const [catalogo, setCatalogo] = useState([]);
+    const [cargando, setCargando] = useState(true);
+    const [errorCarga, setErrorCarga] = useState("");
 
     const [filtros, setFiltros] = useState({
         busqueda: parametros.get("buscar") ?? "",
@@ -21,11 +23,20 @@ function Mangas() {
         orden: "predeterminado",
     });
 
-    // Si la URL trae ?manga=4, el modal parte abierto con ese manga
-    const [mangaSeleccionado, setMangaSeleccionado] = useState(() => {
-        const id = Number(parametros.get("manga"));
-        return catalogo.find(m => m.id === id) ?? null;
-    });
+    const [mangaSeleccionado, setMangaSeleccionado] = useState(null);
+
+    // Pide el catálogo al backend al abrir la página
+    useEffect(() => {
+        obtenerCatalogoCompleto()
+            .then(lista => {
+                setCatalogo(lista);
+                // Si la URL trae ?manga=4, el modal parte abierto con ese manga
+                const id = Number(parametros.get("manga"));
+                setMangaSeleccionado(lista.find(m => m.id === id) ?? null);
+            })
+            .catch(error => setErrorCarga(error.message))
+            .finally(() => setCargando(false));
+    }, [parametros]);
 
     function cambiarFiltro(campo, valor) {
         setFiltros(anterior => ({ ...anterior, [campo]: valor }));
@@ -41,6 +52,7 @@ function Mangas() {
             tomo: volumen.tomo,
             nombre: `${manga.titulo} - Tomo ${volumen.tomo}`,
             precio: volumen.precio,
+            stock: volumen.stock,
             img: volumen.img,
         });
     }
@@ -58,7 +70,7 @@ function Mangas() {
             <Container className="mb-5">
                 {mangasVisibles.length === 0 ? (
                     <p className="text-center my-5 text-muted fs-5">
-                        No existen registros que coincidan con la búsqueda.
+                        {cargando ? "Cargando mangas..." : errorCarga || "No existen registros que coincidan con la búsqueda."}
                     </p>
                 ) : (
                     <Row xs={1} md={3} lg={4} className="g-4">
