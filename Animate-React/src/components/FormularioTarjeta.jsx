@@ -13,8 +13,9 @@ function FormularioTarjeta({ alGuardar, alCancelar, textoBoton = "Guardar tarjet
         setDatos({ ...datos, [e.target.name]: e.target.value });
     }
 
-    function manejarEnvio(e) {
+    async function manejarEnvio(e) {
         e.preventDefault();
+        if (enviando) return; // evita un segundo envío mientras el primero sigue en curso
 
         const nuevosErrores = validarTarjeta(datos);
         if (Object.keys(nuevosErrores).length > 0) {
@@ -22,9 +23,17 @@ function FormularioTarjeta({ alGuardar, alCancelar, textoBoton = "Guardar tarjet
             return;
         }
 
-        alGuardar(datos);
-        setDatos(vacio);
-        setErrores({});
+        setEnviando(true);
+        try {
+            await alGuardar(datos);
+            setDatos(vacio);
+            setErrores({});
+        } catch (err) {
+            // Se muestra en el {errores.general} que ya tenía el formulario
+            setErrores({ general: err.message });
+        } finally {
+            setEnviando(false);
+        }
     }
 
     return (
