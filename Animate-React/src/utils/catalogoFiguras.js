@@ -1,122 +1,40 @@
-import {baseDatosFiguras} from "../data/figuras";
+import { api } from "../services/api";
 
-const FIGURAS_KEY = "catalogoFiguras";
-const PAPELERA_FIGURAS_KEY ="papeleraFiguras";
-
-export function obtenerCatalogoFiguras (){
-    const data = localStorage.getItem(FIGURAS_KEY);
-    if (data) return JSON.parse(data);
-
-    const copiaInicial = JSON.parse(JSON.stringify(baseDatosFiguras));
-    guardarCatalogoFiguras(copiaInicial);
-    return copiaInicial;
+export function obtenerCatalogoFiguras() {
+    return api("/figuras");
 }
 
-export function guardarCatalogoFiguras(catalogo){
-    localStorage.setItem(FIGURAS_KEY, JSON.stringify(catalogo));
+// ---------- Admin ----------
+export function obtenerPapeleraFiguras() {
+    return api("/figuras/papelera");
 }
 
-export function obtenerPapeleraFiguras (){
-    const data = localStorage.getItem(PAPELERA_FIGURAS_KEY);
-    return data ? JSON.parse(data): [];
+export function agregarFigura(datos) {
+    return api("/figuras", { metodo: "POST", cuerpo: datos });
 }
 
-function guardarPapeleraFiguras (lista){
-    localStorage.setItem(PAPELERA_FIGURAS_KEY, JSON.stringify(lista));
+export function eliminarFigura(id) {
+    return api(`/figuras/${id}`, { metodo: "DELETE" });
 }
 
-function generarNuevoIdFigura(){
-    const idsCatalogo = obtenerCatalogoFiguras().map(f=>f.id);
-    const idsPapelera = obtenerPapeleraFiguras().map(f=>f.id);
-    return Math.max(0, ...idsCatalogo, ...idsPapelera) + 1;
+export function restaurarFigura(id) {
+    return api(`/figuras/${id}/restaurar`, { metodo: "PUT" });
 }
 
-export function agregarFigura(datos){
-    const catalogo = obtenerCatalogoFiguras();
-
-    const nuevaFigura = {
-        id: generarNuevoIdFigura(),
-        nombre: datos.nombre,
-        proveniencia: datos.proveniencia,
-        tipoFigura: datos.tipoFigura,
-        precio: datos.precio,
-        stock: datos.stock,
-        vistas:0,
-        fechaAgregado: new Date().toISOString().slice(0,10),
-        imgPortada: datos.imgPortada
-    };
-
-    catalogo.push(nuevaFigura);
-    guardarCatalogoFiguras(catalogo);
-    return nuevaFigura;
-} 
-
-export function eliminarFigura(id){
-    const catalogo = obtenerCatalogoFiguras();
-    const figura = catalogo.find(f=> f.id ===id);
-    if (!figura) return;
-
-    guardarCatalogoFiguras(catalogo.filter(f=> f.id !==id));
-
-    const papelera = obtenerPapeleraFiguras();
-    papelera.push(figura);
-    guardarPapeleraFiguras(papelera);
+export function cambiarPrecioYStockFigura(id, precio, stock) {
+    return api(`/figuras/${id}/precio-stock`, { metodo: "PUT", cuerpo: { precio, stock } });
 }
 
-export function restaurarFigura(id){
-    const papelera = obtenerPapeleraFiguras();
-    const figura = papelera.find(f=> f.id === id);
-    if (!figura) return;
-
-    guardarPapeleraFiguras(papelera.filter(f => f.id !== id));
-
-    const catalogo = obtenerCatalogoFiguras();
-    catalogo.push(figura);
-    guardarCatalogoFiguras(catalogo);
-}
-
-export function cambiarPrecioYStockFigura(id, nuevoPrecio, nuevoStock){
-    const catalogo = obtenerCatalogoFiguras();
-    const figura = catalogo.find(f => f.id === id);
-    if (!figura) return;
-
-    figura.precio = nuevoPrecio;
-    figura.stock = nuevoStock;
-    guardarCatalogoFiguras(catalogo);
-}
-
-export function obtenerFigura(id) {
-    return obtenerCatalogoFiguras().find(f => f.id === id) ?? null;
-}
-
-export function descontarStockFigura(id, cantidad) {
-    const catalogo = obtenerCatalogoFiguras();
-    const figura = catalogo.find(f => f.id === id);
-    if (!figura) return;
-
-    figura.stock = Math.max(0, figura.stock - cantidad);
-    guardarCatalogoFiguras(catalogo);
-}
-
+// Portada primero y después el resto de la galería (no llama al backend)
 export function obtenerImagenesGaleria(figura) {
     const extras = (figura.galeria || []).filter(imagen => imagen !== figura.imgPortada);
     return [figura.imgPortada, ...extras];
 }
 
 export function agregarImagenGaleria(id, ruta) {
-    const catalogo = obtenerCatalogoFiguras();
-    const figura = catalogo.find(f => f.id === id);
-    if (!figura) return;
-
-    figura.galeria = [...(figura.galeria || []), ruta];
-    guardarCatalogoFiguras(catalogo);
+    return api(`/figuras/${id}/galeria`, { metodo: "POST", cuerpo: { ruta } });
 }
 
 export function eliminarImagenGaleria(id, ruta) {
-    const catalogo = obtenerCatalogoFiguras();
-    const figura = catalogo.find(f => f.id === id);
-    if (!figura || ruta === figura.imgPortada) return;
-
-    figura.galeria = (figura.galeria || []).filter(imagen => imagen !== ruta);
-    guardarCatalogoFiguras(catalogo);
+    return api(`/figuras/${id}/galeria?ruta=${encodeURIComponent(ruta)}`, { metodo: "DELETE" });
 }
