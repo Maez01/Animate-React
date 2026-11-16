@@ -7,7 +7,7 @@ import {
 } from "../utils/catalogoMangas";
 
 const formularioVacio = {
-    titulo: "", genero: "shonen", sinopsis: "", imgPortada: "", precio: "", stock: "",
+    titulo: "", genero: GENEROS_MANGA[0].valor, sinopsis: "", imgPortada: "", precio: "", stock: "",
 };
 
 function AdminMangas() {
@@ -116,7 +116,7 @@ function AdminMangas() {
                             </div>
                             <div className="col-md-3">
                                 <label className="form-label">Precio (tomo 1)</label>
-                                <input type="number" min="0" className="form-control" name="precio"
+                                <input type="number" min="1" className="form-control" name="precio"
                                        value={formulario.precio} onChange={manejarCambio}/>
                             </div>
                             <div className="col-md-3">

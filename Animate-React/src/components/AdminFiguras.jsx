@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import FilaFiguraAdmin from "./FilaFiguraAdmin";
 import ModalGaleriaAdmin from "./ModalGaleriaAdmin";
 import ModalEditarFigura from "./ModalEditarFigura";
 import { TIPOS_FIGURA } from "../utils/tiposFigura";
-import{
+import {
     obtenerCatalogoFiguras,
     obtenerPapeleraFiguras,
     agregarFigura,
@@ -12,27 +12,48 @@ import{
     cambiarPrecioYStockFigura,
 } from "../utils/catalogoFiguras";
 
-const formularioVacio ={
+const formularioVacio = {
     nombre: "",
     proveniencia: "",
-    tipoFigura: "Figura a escala",
+    tipoFigura: TIPOS_FIGURA[0],
     imgPortada: "",
     precio: "",
     stock: "",
 };
 
 function AdminFiguras(){
-    const [figuras, setFiguras] = useState(obtenerCatalogoFiguras());
-    const [papelera, setPapelera] = useState(obtenerPapeleraFiguras());
+    const [figuras, setFiguras] = useState([]);
+    const [papelera, setPapelera] = useState([]);
     const [formulario, setFormulario] = useState(formularioVacio);
     const [error, setError] = useState("");
     const [figuraIdAbierta, setFiguraIdAbierta] = useState(null);
-    const figuraAbierta = figuras.find(f => f.id === figuraIdAbierta) || null;
     const [figuraEditando, setFiguraEditando] = useState(null);
+    const [version, setVersion] = useState(0);
+    const figuraAbierta = figuras.find(f => f.id === figuraIdAbierta) || null;
+
+    // Cada vez que cambia "version" se vuelven a pedir las figuras y la papelera al backend
+    useEffect(() => {
+        Promise.all([obtenerCatalogoFiguras(), obtenerPapeleraFiguras()])
+            .then(([lista, borradas]) => {
+                setFiguras(lista);
+                setPapelera(borradas);
+            })
+            .catch(err => setError(err.message));
+    }, [version]);
 
     function recargar(){
-        setFiguras(obtenerCatalogoFiguras());
-        setPapelera(obtenerPapeleraFiguras());
+        setVersion(v => v + 1);
+    }
+
+    // Llama al backend; si sale bien recarga la lista, si falla muestra el mensaje del backend
+    async function ejecutar(accion){
+        try {
+            await accion();
+            setError("");
+            recargar();
+        } catch (err) {
+            setError(err.message);
+        }
     }
 
     function manejarCambio(e){
@@ -52,89 +73,85 @@ function AdminFiguras(){
             setError("Completa todos los campos de texto.");
             return;
         }
-        if (formulario.precio === "" || formulario.stock === "" || precio<0 || stock<0 || !Number.isInteger(stock)){
-            setError("Precio y Stock deben ser numeros validos mayores a 0 ");
+        if (formulario.precio === "" || formulario.stock === "" || precio <= 0 || stock < 0 || !Number.isInteger(stock)){
+            setError("El precio debe ser mayor a 0 y el stock un número entero (0 o más).");
             return;
-        } 
+        }
 
-        agregarFigura({nombre, proveniencia, tipoFigura: formulario.tipoFigura, imgPortada, precio, stock});
-        setFormulario(formularioVacio);
-        setError("");
-        recargar();
+        ejecutar(async () => {
+            await agregarFigura({nombre, proveniencia, tipoFigura: formulario.tipoFigura, imgPortada, precio, stock});
+            setFormulario(formularioVacio);
+        });
     }
 
     function manejarGuardar(id, precio, stock){
-        cambiarPrecioYStockFigura(id, precio, stock);
-        recargar();
+        ejecutar(() => cambiarPrecioYStockFigura(id, precio, stock));
     }
 
     function manejarEliminar(figura){
-        if(window.confirm(`Eliminar "${figura.nombre}" del catalogo?`)){
-            eliminarFigura(figura.id);
-            recargar();
-        }        
+        if(window.confirm(`Eliminar "${figura.nombre}" del catalogo? (queda en la papelera, se puede restaurar)`)){
+            ejecutar(() => eliminarFigura(figura.id));
+        }
     }
 
     function manejarRestaurar(id){
-        restaurarFigura(id);
-        recargar();
+        ejecutar(() => restaurarFigura(id));
     }
 
     return (
         <>
-        <div className=" card shadow-sm mb-4">
-            <div className="card-body">
-                <h5 className="card-title fw-bold mb-3">Agregar nueva figura</h5>
-                <form onSubmit={manejarAgregar} noValidate>
-                    <div className="row g-3">
-                        <div className="col-md-6">
-                            <label className="form-label">Nombre</label>
-                            <input type="text" className="form-control" name="nombre"
-                            value={formulario.nombre} onChange={manejarCambio}/>
+            <div className="card shadow-sm mb-4">
+                <div className="card-body">
+                    <h5 className="card-title fw-bold mb-3">Agregar nueva figura</h5>
+                    <form onSubmit={manejarAgregar} noValidate>
+                        <div className="row g-3">
+                            <div className="col-md-6">
+                                <label className="form-label">Nombre</label>
+                                <input type="text" className="form-control" name="nombre"
+                                       value={formulario.nombre} onChange={manejarCambio}/>
+                            </div>
+                            <div className="col-md-6">
+                                <label className="form-label">Proveniencia</label>
+                                <input type="text" className="form-control" name="proveniencia" placeholder="Ej: Punishing Gray Raven"
+                                       value={formulario.proveniencia} onChange={manejarCambio}/>
+                            </div>
+                            <div className="col-md-6">
+                                <label className="form-label">Tipo de figura</label>
+                                <select className="form-select" name="tipoFigura"
+                                        value={formulario.tipoFigura} onChange={manejarCambio}>
+                                    {TIPOS_FIGURA.map(t => (
+                                        <option key={t} value={t}>{t}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="col-md-6">
+                                <label className="form-label">Imagen de portada</label>
+                                <input type="text" className="form-control" name="imgPortada" placeholder="Ej: /Imagenes/Figuras/nueva.webp"
+                                       value={formulario.imgPortada} onChange={manejarCambio}/>
+                            </div>
+                            <div className="col-md-6">
+                                <label className="form-label">Precio</label>
+                                <input type="number" min="1" className="form-control" name="precio"
+                                       value={formulario.precio} onChange={manejarCambio}/>
+                            </div>
+                            <div className="col-md-6">
+                                <label className="form-label">Stock</label>
+                                <input type="number" min="0" className="form-control" name="stock"
+                                       value={formulario.stock} onChange={manejarCambio}/>
+                            </div>
                         </div>
-                        <div className="col-md-6">
-                            <label className="form-label">Proveniencia</label>
-                            <input type="text" className="form-control" name="proveniencia" placeholder="Ej: Punishing Gray Raven"
-                            value={formulario.proveniencia} onChange={manejarCambio}/>
-                        </div>
-                        <div className="col-md-6">
-                            <label className="form-label">Tipo de figura</label>
-                            <select className="form-select" name="tipoFigura"
-                            value={formulario.tipoFigura} onChange={manejarCambio}>
-                                {TIPOS_FIGURA.map(t => (
-                                    <option key={t} value={t}>{t}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="col-md-6">
-                            <label className=" form-label">Imagen de portada</label>
-                            <input type="text" className="form-control" name="imgPortada" placeholder="Ej: /Imagenes/Figuras/nueva.webp"
-                            value={formulario.imgPortada} onChange={manejarCambio}/>
-                        </div>
-                        <div className="col-md-6">
-                            <label className="form-label">Precio</label>
-                            <input type="number" min="0" className="form-control" name="precio"
-                            value={formulario.precio} onChange={manejarCambio}/>
-                        </div>
-                        <div className="col-md-6">
-                            <label className="form-label">Stock</label>
-                            <input type="number" min="0" className="form-control" name="stock"
-                            value={formulario.stock} onChange={manejarCambio}/>
-                        </div>
-                    </div>
-                    {error && <div className="text-danger mt-2">{error}</div>}
-                    <button type="submit" className="btn btn-primary fw-bold mt-3">Agregar figura</button>
-                </form>
+                        {error && <div className="text-danger mt-2">{error}</div>}
+                        <button type="submit" className="btn btn-primary fw-bold mt-3">Agregar figura</button>
+                    </form>
+                </div>
             </div>
-        </div>
 
-        <div className="card shadow-sm mb-4">
-            <div className="card-body">
-
-                <h5 className="card-title fw-bold mb-3">Figuras en catalogo</h5>
-                <div className="table-responsive">
-                    <table className="table align-middle">
-                        <thead>
+            <div className="card shadow-sm mb-4">
+                <div className="card-body">
+                    <h5 className="card-title fw-bold mb-3">Figuras en catalogo</h5>
+                    <div className="table-responsive">
+                        <table className="table align-middle">
+                            <thead>
                             <tr>
                                 <th>Portada</th>
                                 <th>Nombre</th>
@@ -143,38 +160,45 @@ function AdminFiguras(){
                                 <th>Stock</th>
                                 <th></th>
                             </tr>
-                        </thead>
-                        <tbody>
+                            </thead>
+                            <tbody>
                             {figuras.length === 0 && (
                                 <tr>
-                                    <td colSpan="6" className="text-center text-muted">No quedan figuras en ek catalogo.</td>
+                                    <td colSpan="6" className="text-center text-muted">No quedan figuras en el catalogo.</td>
                                 </tr>
                             )}
 
                             {figuras.map(figura => (
-                                <FilaFiguraAdmin key={figura.id} figura={figura} alGuardar={manejarGuardar} alEliminar={manejarEliminar} alVerGaleria={figura=> setFiguraIdAbierta(figura.id)} alEditar={setFiguraEditando}/>
+                                <FilaFiguraAdmin
+                                    key={figura.id}
+                                    figura={figura}
+                                    alGuardar={manejarGuardar}
+                                    alEliminar={manejarEliminar}
+                                    alVerGaleria={f => setFiguraIdAbierta(f.id)}
+                                    alEditar={setFiguraEditando}
+                                />
                             ))}
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div className="card shadow-sm">
-            <div className="card-body">
-                <h5 className="card-title fw-bold mb-3">Papelera figuras</h5>
-                <p className="text-muted smmall mb-3">Las figuras eliminadas quedan en la papelera, pueden ser restauradas</p>
-                <div className="table-responsive">
-                    <table className="table align-middle">
-                        <thead>
+            <div className="card shadow-sm">
+                <div className="card-body">
+                    <h5 className="card-title fw-bold mb-3">Papelera figuras</h5>
+                    <p className="text-muted small mb-3">Las figuras eliminadas quedan en la papelera, pueden ser restauradas</p>
+                    <div className="table-responsive">
+                        <table className="table align-middle">
+                            <thead>
                             <tr>
-                                <th>Portadas</th>
+                                <th>Portada</th>
                                 <th>Nombre</th>
                                 <th>Tipo</th>
                                 <th></th>
                             </tr>
-                        </thead>
-                        <tbody>
+                            </thead>
+                            <tbody>
                             {papelera.length === 0 && (
                                 <tr>
                                     <td colSpan="4" className="text-center text-muted">La papelera esta vacia</td>
@@ -194,12 +218,13 @@ function AdminFiguras(){
                                     </td>
                                 </tr>
                             ))}
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div> 
-        <ModalGaleriaAdmin figura={figuraAbierta} alCerrar={() => setFiguraIdAbierta(null)} alCambiar={recargar} />
+
+            <ModalGaleriaAdmin figura={figuraAbierta} alCerrar={() => setFiguraIdAbierta(null)} alCambiar={recargar} />
 
             {figuraEditando && (
                 <ModalEditarFigura
