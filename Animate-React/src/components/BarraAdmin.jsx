@@ -1,12 +1,14 @@
 import { Link, useNavigate } from "react-router-dom";
 import {Navbar, Nav, Container, Button} from "react-bootstrap";
-import { cerrarSesion } from "../utils/usuarios";
+import { useAuth } from "../context/authContext";
 
 function BarraAdmin({sesion}){
     const navigate = useNavigate();
+    const { logout } = useAuth();
 
-    function manejarCerrarSesion(){
-        cerrarSesion();
+    // Espera a que el backend borre la sesión antes de ir al login
+    async function manejarCerrarSesion(){
+        await logout();
         navigate("/login");
     }
 

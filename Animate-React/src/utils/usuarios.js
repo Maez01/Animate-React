@@ -1,4 +1,4 @@
-import { api, obtenerUsuarioActual, cerrarSesionApi, iniciarSesion } from "../services/api";
+import { api, iniciarSesion } from "../services/api";
 
 // Solo letras y espacios (incluye tildes y ñ)
 export const soloLetras = /^[A-Za-zÁÉÍÓÚÑáéíóúñ\s]+$/;
@@ -8,19 +8,6 @@ export const formatoCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const tieneMayuscula = /[A-ZÁÉÍÓÚÑ]/;
 // Al menos un carácter especial de estos: # $ % & *
 export const tieneEspecial = /[#$%&*]/;
-
-// ---------- Sesión ----------
-// TEMPORAL: Admin.jsx y BarraAdmin.jsx todavía usan estas dos funciones y comparan
-// el rol con "Admin". Se quitan cuando se conecte el panel de administración.
-export function obtenerSesion() {
-    const usuario = obtenerUsuarioActual();
-    if (!usuario) return null;
-    return { ...usuario, rol: usuario.rol === "ADMIN" ? "Admin" : "Usuario" };
-}
-
-export function cerrarSesion() {
-    return cerrarSesionApi();
-}
 
 // ---------- Validación del registro ----------
 export function validarRegistro(datos) {

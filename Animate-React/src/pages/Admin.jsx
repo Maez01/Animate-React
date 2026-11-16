@@ -1,20 +1,16 @@
-import { Navigate } from "react-router-dom";
 import { Tabs, Tab, Container } from "react-bootstrap";
 import BarraAdmin from "../components/BarraAdmin";
 import AdminFiguras from "../components/AdminFiguras";
 import AdminMangas from "../components/AdminMangas";
-import { obtenerSesion } from "../utils/usuarios";
+import { useAuth } from "../context/authContext";
 
 function Admin(){
-    const sesion = obtenerSesion();
-
-    if (sesion===null || sesion.rol !=="Admin"){
-        return <Navigate to ="/login" replace/>
-    }
+    // RutaProtegida ya dejó pasar solo a ADMIN; aquí solo se lee el usuario para la barra
+    const { usuario } = useAuth();
 
     return(
         <div style={{ backgroundColor: "darkgray", minHeight:"100vh"}}>
-            <BarraAdmin sesion={sesion}/>
+            <BarraAdmin sesion={usuario}/>
 
             <Container className="pb-5">
                 <h2 className="fw-bold text-white mb-4"> Panel de Administracion</h2>

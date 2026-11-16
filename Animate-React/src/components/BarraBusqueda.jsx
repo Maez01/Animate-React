@@ -9,7 +9,7 @@ function BarraBusqueda(){
         e.preventDefault();
         const texto = termino.trim();
         if(texto){
-            navigate(`/buscar?q=${encodeURIComponent(texto)}`)
+            navigate(`/mangas?buscar=${encodeURIComponent(texto)}`)
         }
     }
     return (
