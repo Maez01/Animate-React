@@ -1,84 +1,101 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { api } from "../services/api";
 import {
     obtenerCatalogoFiguras,
     obtenerPapeleraFiguras,
-    obtenerFigura,
     agregarFigura,
+    editarFigura,
     eliminarFigura,
     restaurarFigura,
     cambiarPrecioYStockFigura,
-    descontarStockFigura,
     obtenerImagenesGaleria,
     agregarImagenGaleria,
     eliminarImagenGaleria,
 } from "./catalogoFiguras";
-import { baseDatosFiguras } from "../data/figuras";
 
-const primera = baseDatosFiguras[0];
+// La conexión con el backend se reemplaza por una función simulada
+vi.mock("../services/api", () => ({ api: vi.fn() }));
 
-describe("catálogo de figuras", () => {
-    it("la primera vez copia todas las figuras de figuras.js", () => {
-        expect(obtenerCatalogoFiguras()).toHaveLength(baseDatosFiguras.length);
+const datosFigura = {
+    nombre: "Lucia Crimson Abyss",
+    proveniencia: "Punishing Gray Raven",
+    tipoFigura: "Figura a escala",
+    precio: 127000,
+    stock: 2,
+    imgPortada: "/Imagenes/Figuras/lucia.webp",
+};
+
+beforeEach(() => {
+    api.mockReset();
+    api.mockResolvedValue({});
+});
+
+describe("lectura del catálogo de figuras", () => {
+    it("obtenerCatalogoFiguras pide las figuras activas al backend", async () => {
+        api.mockResolvedValue([{ id: 1, ...datosFigura }]);
+
+        expect(await obtenerCatalogoFiguras()).toHaveLength(1);
+        expect(api).toHaveBeenCalledWith("/figuras");
     });
 
-    it("agrega una figura nueva con un id que no se repite", () => {
-        const nueva = agregarFigura({
-            nombre: "Figura de prueba",
-            proveniencia: "Pruebas",
-            tipoFigura: "Nendoroid",
-            precio: 50000,
-            stock: 2,
-            imgPortada: "/Imagenes/Figuras/prueba.webp",
-        });
+    it("obtenerPapeleraFiguras pide las figuras eliminadas", async () => {
+        await obtenerPapeleraFiguras();
 
-        const ids = obtenerCatalogoFiguras().map(f => f.id);
-        expect(ids).toContain(nueva.id);
-        expect(new Set(ids).size).toBe(ids.length);
-        expect(nueva.vistas).toBe(0);
-    });
-
-    it("eliminar manda la figura a la papelera y restaurar la devuelve", () => {
-        eliminarFigura(primera.id);
-        expect(obtenerFigura(primera.id)).toBeNull();
-        expect(obtenerPapeleraFiguras().map(f => f.id)).toContain(primera.id);
-
-        restaurarFigura(primera.id);
-        expect(obtenerFigura(primera.id)).not.toBeNull();
-        expect(obtenerPapeleraFiguras()).toHaveLength(0);
-    });
-
-    it("cambia el precio y el stock de una figura", () => {
-        cambiarPrecioYStockFigura(primera.id, 99990, 7);
-
-        const figura = obtenerFigura(primera.id);
-        expect(figura.precio).toBe(99990);
-        expect(figura.stock).toBe(7);
-    });
-
-    it("descontar stock nunca deja un número negativo", () => {
-        descontarStockFigura(primera.id, 9999);
-        expect(obtenerFigura(primera.id).stock).toBe(0);
+        expect(api).toHaveBeenCalledWith("/figuras/papelera");
     });
 });
 
-describe("galería de figuras", () => {
+describe("administración de figuras", () => {
+    it("agregarFigura envía todos los datos", async () => {
+        await agregarFigura(datosFigura);
+
+        expect(api).toHaveBeenCalledWith("/figuras", { metodo: "POST", cuerpo: datosFigura });
+    });
+
+    it("editarFigura envía la figura completa con PUT", async () => {
+        await editarFigura(3, datosFigura);
+
+        expect(api).toHaveBeenCalledWith("/figuras/3", { metodo: "PUT", cuerpo: datosFigura });
+    });
+
+    it("cambiarPrecioYStockFigura envía solo precio y stock", async () => {
+        await cambiarPrecioYStockFigura(3, 99000, 0);
+
+        expect(api).toHaveBeenCalledWith("/figuras/3/precio-stock", { metodo: "PUT", cuerpo: { precio: 99000, stock: 0 } });
+    });
+
+    it("eliminarFigura la manda a la papelera y restaurarFigura la devuelve", async () => {
+        await eliminarFigura(3);
+        await restaurarFigura(3);
+
+        expect(api).toHaveBeenNthCalledWith(1, "/figuras/3", { metodo: "DELETE" });
+        expect(api).toHaveBeenNthCalledWith(2, "/figuras/3/restaurar", { metodo: "PUT" });
+    });
+});
+
+describe("galería de imágenes", () => {
     it("pone la portada primero y no la repite", () => {
-        const figura = { imgPortada: "a.webp", galeria: ["a.webp", "b.webp"] };
-        expect(obtenerImagenesGaleria(figura)).toEqual(["a.webp", "b.webp"]);
+        const figura = { imgPortada: "/a.webp", galeria: ["/b.webp", "/a.webp", "/c.webp"] };
+
+        expect(obtenerImagenesGaleria(figura)).toEqual(["/a.webp", "/b.webp", "/c.webp"]);
     });
 
-    it("una figura sin galería muestra solo su portada", () => {
-        expect(obtenerImagenesGaleria({ imgPortada: "a.webp" })).toEqual(["a.webp"]);
+    it("sin galería muestra solo la portada", () => {
+        expect(obtenerImagenesGaleria({ imgPortada: "/a.webp" })).toEqual(["/a.webp"]);
     });
 
-    it("agrega y quita imágenes extra, pero nunca la portada", () => {
-        agregarImagenGaleria(primera.id, "/Imagenes/Figuras/nueva.webp");
-        expect(obtenerImagenesGaleria(obtenerFigura(primera.id))).toContain("/Imagenes/Figuras/nueva.webp");
+    it("agregarImagenGaleria envía la ruta de la imagen", async () => {
+        await agregarImagenGaleria(3, "/b.webp");
 
-        eliminarImagenGaleria(primera.id, primera.imgPortada);
-        expect(obtenerImagenesGaleria(obtenerFigura(primera.id))[0]).toBe(primera.imgPortada);
+        expect(api).toHaveBeenCalledWith("/figuras/3/galeria", { metodo: "POST", cuerpo: { ruta: "/b.webp" } });
+    });
 
-        eliminarImagenGaleria(primera.id, "/Imagenes/Figuras/nueva.webp");
-        expect(obtenerImagenesGaleria(obtenerFigura(primera.id))).not.toContain("/Imagenes/Figuras/nueva.webp");
+    it("eliminarImagenGaleria codifica la ruta para que no rompa la URL", async () => {
+        await eliminarImagenGaleria(3, "/Imagenes/Figuras/foto 1.webp");
+
+        expect(api).toHaveBeenCalledWith(
+            "/figuras/3/galeria?ruta=%2FImagenes%2FFiguras%2Ffoto%201.webp",
+            { metodo: "DELETE" }
+        );
     });
 });
