@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ModalTomosAdmin from "./ModalTomosManga";
+import { GENEROS_MANGA } from "../utils/generosManga";
 import {
     obtenerCatalogoCompleto,
     obtenerPapelera,
@@ -107,14 +108,9 @@ function AdminMangas() {
                                 <label className="form-label">Género</label>
                                 <select className="form-select" name="genero"
                                     value={formulario.genero} onChange={manejarCambio}>
-                                    <option value="shonen">Shonen</option>
-                                    <option value="seinen">Seinen</option>
-                                    <option value="shojo">Shojo</option>
-                                    <option value="slice of life">Slice of Life</option>
-                                    <option value="fantasia">Fantasía</option>
-                                    <option value="terror">Terror</option>
-                                    <option value="josei">Josei</option>
-                                    <option value="isekai">Isekai</option>
+                                    {GENEROS_MANGA.map(g => (
+                                        <option key={g.valor} value={g.valor}>{g.texto}</option>
+                                    ))}
                                 </select>
                             </div>
                             <div className="col-12">
