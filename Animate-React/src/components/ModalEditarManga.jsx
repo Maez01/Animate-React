@@ -74,7 +74,7 @@ function ModalEditarManga({ manga, alCerrar, alGuardar }) {
                     <Form.Group className="mb-2">
                         <Form.Label>Imagen de portada (ruta)</Form.Label>
                         <div className="d-flex align-items-center gap-2">
-                            <img src={formulario.imgPortada} alt="Vista previa"
+                            <img src={formulario.imgPortada.trim() || undefined} alt="Vista previa"
                                  style={{ width: "50px", height: "65px", objectFit: "cover", borderRadius: "4px" }} />
                             <Form.Control name="imgPortada" value={formulario.imgPortada} onChange={manejarCambio} />
                         </div>

@@ -35,7 +35,7 @@ function FilaTomoAdmin({volumen, esUltimo, alGuardar, alEliminar}) {
             </td>
             <td>
                 <div className="d-flex align-items-center gap-2">
-                    <img src={img} alt={`Vol. ${volumen.tomo}`}
+                    <img src={img.trim() || undefined} alt={`Vol. ${volumen.tomo}`}
                          style={{width: "35px", height: "50px", objectFit: "cover", borderRadius: "4px"}}/>
                     <input type="text" className="form-control form-control-sm" style={{width: "220px"}}
                            value={img} onChange={e => setImg(e.target.value)}/>
