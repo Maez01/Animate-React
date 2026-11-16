@@ -28,6 +28,12 @@ export function agregarTomo(mangaId, datos) {
     return api(`/mangas/${mangaId}/tomos`, { metodo: "POST", cuerpo: datos });
 }
 
-export function cambiarPrecioYStockTomo(mangaId, tomo, precio, stock) {
-    return api(`/mangas/${mangaId}/tomos/${tomo}`, { metodo: "PUT", cuerpo: { precio, stock } });
+// Solo se elimina el último tomo, así la numeración que ven los clientes no queda con huecos
+export function eliminarTomo(mangaId, tomo) {
+    return api(`/mangas/${mangaId}/tomos/${tomo}`, { metodo: "DELETE" });
+}
+
+// datos: { precio, stock, img }
+export function editarTomo(mangaId, tomo, datos) {
+    return api(`/mangas/${mangaId}/tomos/${tomo}`, { metodo: "PUT", cuerpo: datos });
 }

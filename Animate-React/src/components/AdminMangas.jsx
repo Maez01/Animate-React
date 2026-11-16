@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ModalTomosAdmin from "./ModalTomosManga";
 import {
     obtenerCatalogoCompleto,
@@ -18,17 +18,39 @@ const formularioVacio = {
 };
 
 function AdminMangas() {
-    const [mangas, setMangas] = useState(obtenerCatalogoCompleto());
-    const [papelera, setPapelera] = useState(obtenerPapelera());
+    const [mangas, setMangas] = useState([]);
+    const [papelera, setPapelera] = useState([]);
     const [formulario, setFormulario] = useState(formularioVacio);
     const [error, setError] = useState("");
     const [mangaIdAbierto, setMangaIdAbierto] = useState(null);
 
     const mangaAbierto = mangas.find(m => m.id === mangaIdAbierto) || null;
 
+    const [version, setVersion] = useState(0);
+
+    // Cada vez que cambia "version" se vuelven a pedir el catálogo y la papelera al backend
+    useEffect(() => {
+        Promise.all([obtenerCatalogoCompleto(), obtenerPapelera()])
+            .then(([lista, borrados]) => {
+                setMangas(lista);
+                setPapelera(borrados);
+            })
+            .catch(err => setError(err.message));
+    }, [version]);
+
     function recargar() {
-        setMangas(obtenerCatalogoCompleto());
-        setPapelera(obtenerPapelera());
+        setVersion(v => v + 1);
+    }
+
+    // Llama al backend; si sale bien recarga la lista, si falla muestra el mensaje del backend
+    async function ejecutar(accion) {
+        try {
+            await accion();
+            setError("");
+            recargar();
+        } catch (err) {
+            setError(err.message);
+        }
     }
 
     function manejarCambio(e) {
@@ -48,27 +70,25 @@ function AdminMangas() {
             setError("Completa todos los campos de texto.");
             return;
         }
-        if (formulario.precio === "" || formulario.stock === "" || precio < 0 || stock < 0 || !Number.isInteger(stock)) {
-            setError("Precio y stock deben ser números válidos (0 o más).");
+        if (formulario.precio === "" || formulario.stock === "" || precio <= 0 || stock < 0 || !Number.isInteger(stock)) {
+            setError("El precio debe ser mayor a 0 y el stock un número entero (0 o más).");
             return;
         }
 
-        agregarManga({ titulo, genero: formulario.genero, sinopsis, imgPortada, precio, stock });
-        setFormulario(formularioVacio);
-        setError("");
-        recargar();
+        ejecutar(async () => {
+            await agregarManga({ titulo, genero: formulario.genero, sinopsis, imgPortada, precio, stock });
+            setFormulario(formularioVacio);
+        });
     }
 
     function manejarEliminar(manga) {
         if (window.confirm(`¿Eliminar "${manga.titulo}" del catálogo? (queda en la papelera, se puede restaurar)`)) {
-            eliminarManga(manga.id);
-            recargar();
+            ejecutar(() => eliminarManga(manga.id));
         }
     }
 
     function manejarRestaurar(id) {
-        restaurarManga(id);
-        recargar();
+        ejecutar(() => restaurarManga(id));
     }
 
     return (
