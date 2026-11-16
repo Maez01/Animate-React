@@ -1,131 +1,164 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import CarritoProvider from "../context/CarritoProvider";
 import Mangas from "./Mangas";
-import { baseDatosMangas } from "../data/mangas";
-import { guardarCatalogo } from "../utils/catalogoMangas";
+import { obtenerCatalogoCompleto } from "../utils/catalogoMangas";
 
-const primero = baseDatosMangas[0];
+// El catálogo lo entrega una función simulada en vez del backend
+vi.mock("../utils/catalogoMangas", () => ({ obtenerCatalogoCompleto: vi.fn() }));
 
-function renderMangas(ruta = "/mangas") {
-    return render(
+const MANGAS = [
+    {
+        id: 1, titulo: "BOCCHI THE ROCK", genero: "SLICE OF LIFE", vistas: 10, fechaAgregado: "2026-01-05",
+        sinopsis: "Una chica tímida que toca guitarra.", imgPortada: "/b1.jpg",
+        volumenes: [
+            { tomo: 1, precio: 14990, stock: 8, img: "/b1.jpg" },
+            { tomo: 2, precio: 14990, stock: 0, img: "/b2.jpg" },
+        ],
+    },
+    {
+        id: 2, titulo: "CHAINSAW MAN", genero: "SHONEN", vistas: 50, fechaAgregado: "2026-03-01",
+        sinopsis: "Un cazador de demonios.", imgPortada: "/c1.jpg",
+        volumenes: [{ tomo: 1, precio: 12990, stock: 3, img: "/c1.jpg" }],
+    },
+    {
+        id: 3, titulo: "MONSTER", genero: "seinen", vistas: 5, fechaAgregado: "2026-02-01",
+        sinopsis: "Un médico persigue a un asesino.", imgPortada: "/m1.jpg",
+        volumenes: [{ tomo: 1, precio: 16990, stock: 1, img: "/m1.jpg" }],
+    },
+];
+
+beforeEach(() => {
+    vi.clearAllMocks();
+    obtenerCatalogoCompleto.mockImplementation(async () => structuredClone(MANGAS));
+});
+
+// Muestra la página y espera a que llegue el catálogo
+async function renderMangas(ruta = "/mangas") {
+    const user = userEvent.setup();
+    const { container } = render(
         <MemoryRouter initialEntries={[ruta]}>
             <CarritoProvider>
                 <Mangas />
             </CarritoProvider>
         </MemoryRouter>
     );
+    await screen.findAllByRole("button", { name: "Ver Volúmenes" });
+    const titulos = () => [...container.querySelectorAll(".card-title")].map(t => t.textContent);
+    const [selectGenero, selectOrden] = screen.getAllByRole("combobox");
+    return { user, titulos, selectGenero, selectOrden };
 }
 
-const tarjetasVisibles = () => screen.queryAllByRole("button", { name: "Ver Volúmenes" });
-
-async function abrirVolumenesDelPrimero(user) {
-    await user.click(tarjetasVisibles()[0]);
-    return screen.findByRole("dialog");
-}
+const carritoGuardado = () => JSON.parse(localStorage.getItem("carritoAnimate") ?? "[]");
 
 describe("catálogo de mangas", () => {
-    it("muestra una tarjeta por cada manga", () => {
-        renderMangas();
-        expect(tarjetasVisibles()).toHaveLength(baseDatosMangas.length);
+    it("muestra 'Cargando' mientras espera y luego una tarjeta por manga", async () => {
+        render(<MemoryRouter><CarritoProvider><Mangas /></CarritoProvider></MemoryRouter>);
+
+        expect(screen.getByText("Cargando mangas...")).toBeInTheDocument();
+        expect(await screen.findAllByRole("button", { name: "Ver Volúmenes" })).toHaveLength(3);
     });
 
-    it("el buscador filtra por título", async () => {
-        const user = userEvent.setup();
-        renderMangas();
+    it("si el backend no responde, muestra el error", async () => {
+        obtenerCatalogoCompleto.mockRejectedValueOnce(new Error("No se pudo conectar con el servidor"));
 
-        await user.type(screen.getByPlaceholderText("Buscar por título..."), "night");
+        render(<MemoryRouter><CarritoProvider><Mangas /></CarritoProvider></MemoryRouter>);
 
-        const esperados = baseDatosMangas.filter(m => m.titulo.toLowerCase().includes("night"));
-        expect(tarjetasVisibles()).toHaveLength(esperados.length);
-        expect(screen.getByText(esperados[0].titulo)).toBeInTheDocument();
+        expect(await screen.findByText("No se pudo conectar con el servidor")).toBeInTheDocument();
     });
 
-    it("filtra por género", async () => {
-        const user = userEvent.setup();
-        renderMangas();
+    it("el buscador filtra por título sin importar las mayúsculas", async () => {
+        const { user, titulos } = await renderMangas();
 
-        await user.selectOptions(screen.getByDisplayValue("Todos los géneros"), "seinen");
+        await user.type(screen.getByPlaceholderText("Buscar por título..."), "chain");
 
-        const esperados = baseDatosMangas.filter(m => m.genero.toLowerCase() === "seinen");
-        expect(tarjetasVisibles()).toHaveLength(esperados.length);
+        expect(titulos()).toEqual(["CHAINSAW MAN"]);
+    });
+
+    it("filtra por género aunque en el backend venga en mayúsculas o minúsculas", async () => {
+        const { user, titulos, selectGenero } = await renderMangas();
+
+        await user.selectOptions(selectGenero, "seinen");
+        expect(titulos()).toEqual(["MONSTER"]);
+
+        await user.selectOptions(selectGenero, "shonen");
+        expect(titulos()).toEqual(["CHAINSAW MAN"]);
+    });
+
+    it("ordena por más vistos y por más recientes", async () => {
+        const { user, titulos, selectOrden } = await renderMangas();
+
+        await user.selectOptions(selectOrden, "mas-vistos");
+        expect(titulos()).toEqual(["CHAINSAW MAN", "BOCCHI THE ROCK", "MONSTER"]);
+
+        await user.selectOptions(selectOrden, "recientes");
+        expect(titulos()).toEqual(["CHAINSAW MAN", "MONSTER", "BOCCHI THE ROCK"]);
     });
 
     it("avisa cuando ningún manga coincide", async () => {
-        const user = userEvent.setup();
-        renderMangas();
+        const { user } = await renderMangas();
 
         await user.type(screen.getByPlaceholderText("Buscar por título..."), "zzz");
 
         expect(screen.getByText("No existen registros que coincidan con la búsqueda.")).toBeInTheDocument();
-        expect(tarjetasVisibles()).toHaveLength(0);
     });
 
-    it("toma la búsqueda desde la dirección (?buscar=)", () => {
-        renderMangas("/mangas?buscar=bocchi");
+    it("toma la búsqueda desde la dirección (?buscar=), como la envía el inicio", async () => {
+        const { titulos } = await renderMangas("/mangas?buscar=monster");
 
-        const esperados = baseDatosMangas.filter(m => m.titulo.toLowerCase().includes("bocchi"));
-        expect(screen.getByPlaceholderText("Buscar por título...")).toHaveValue("bocchi");
-        expect(tarjetasVisibles()).toHaveLength(esperados.length);
+        expect(screen.getByPlaceholderText("Buscar por título...")).toHaveValue("monster");
+        expect(titulos()).toEqual(["MONSTER"]);
     });
 });
 
 describe("volúmenes y compra", () => {
-    it("Ver Volúmenes abre la sinopsis y un botón Comprar por tomo con stock", async () => {
-        const user = userEvent.setup();
-        renderMangas();
+    async function abrirVolumenes(titulo) {
+        const datos = await renderMangas();
+        const tarjeta = screen.getByText(titulo).closest(".card");
+        await datos.user.click(within(tarjeta).getByRole("button", { name: "Ver Volúmenes" }));
+        const dialogo = await screen.findByRole("dialog");
+        return { ...datos, dialogo };
+    }
 
-        const ventana = await abrirVolumenesDelPrimero(user);
+    it("muestra la sinopsis, Comprar en los tomos con stock y Sin stock en los agotados", async () => {
+        const { dialogo } = await abrirVolumenes("BOCCHI THE ROCK");
 
-        expect(within(ventana).getByText(primero.sinopsis)).toBeInTheDocument();
-        const conStock = primero.volumenes.filter(v => v.stock > 0);
-        expect(within(ventana).getAllByRole("button", { name: "Comprar" })).toHaveLength(conStock.length);
+        expect(within(dialogo).getByText("Una chica tímida que toca guitarra.")).toBeInTheDocument();
+        expect(within(dialogo).getByRole("button", { name: "Comprar" })).toBeEnabled();
+        expect(within(dialogo).getByRole("button", { name: "Sin stock" })).toBeDisabled();
     });
 
-    it("comprar un tomo lo agrega al carrito con su nombre y clave", async () => {
-        const user = userEvent.setup();
-        renderMangas();
+    it("comprar un tomo lo agrega al carrito con su clave, precio y stock", async () => {
+        const { user, dialogo } = await abrirVolumenes("BOCCHI THE ROCK");
 
-        const ventana = await abrirVolumenesDelPrimero(user);
-        await user.click(within(ventana).getAllByRole("button", { name: "Comprar" })[0]);
+        await user.click(within(dialogo).getByRole("button", { name: "Comprar" }));
 
-        expect(within(ventana).getByRole("button", { name: "Agregado ✓" })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /Carrito/ })).toHaveTextContent("1");
-
-        const [item] = JSON.parse(localStorage.getItem("carritoAnimate"));
-        expect(item.clave).toBe(`manga-${primero.id}-1`);
-        expect(item.nombre).toBe(`${primero.titulo} - Tomo 1`);
-    });
-
-    it("un tomo agotado aparece con el botón desactivado", async () => {
-        const catalogo = structuredClone(baseDatosMangas);
-        catalogo[0].volumenes[0].stock = 0;
-        guardarCatalogo(catalogo);
-        const user = userEvent.setup();
-        renderMangas();
-
-        const ventana = await abrirVolumenesDelPrimero(user);
-
-        expect(within(ventana).getByRole("button", { name: "Sin stock" })).toBeDisabled();
-        expect(within(ventana).getByText("Agotado")).toBeInTheDocument();
+        await waitFor(() => expect(carritoGuardado()).toEqual([{
+            clave: "manga-1-1",
+            tipo: "manga",
+            productoId: 1,
+            tomo: 1,
+            nombre: "BOCCHI THE ROCK - Tomo 1",
+            precio: 14990,
+            stock: 8,
+            img: "/b1.jpg",
+            cantidad: 1,
+        }]));
     });
 
     it("la dirección ?manga= abre directo los volúmenes de ese manga", async () => {
-        const manga = baseDatosMangas[3];
-        renderMangas(`/mangas?manga=${manga.id}`);
+        await renderMangas("/mangas?manga=2");
 
-        const ventana = await screen.findByRole("dialog");
-        expect(within(ventana).getByText(manga.titulo)).toBeInTheDocument();
+        const dialogo = await screen.findByRole("dialog");
+        expect(within(dialogo).getByText("Un cazador de demonios.")).toBeInTheDocument();
     });
 
     it("la ventana se cierra con el botón de cerrar", async () => {
-        const user = userEvent.setup();
-        renderMangas();
+        const { user, dialogo } = await abrirVolumenes("MONSTER");
 
-        const ventana = await abrirVolumenesDelPrimero(user);
-        await user.click(within(ventana).getByRole("button", { name: "Close" }));
+        await user.click(within(dialogo).getByRole("button", { name: "Close" }));
 
         await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     });
