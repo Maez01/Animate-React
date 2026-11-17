@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Modal } from "react-bootstrap";
 import FilaTomoAdmin from "./FilaTomoAdmin";
-import { agregarTomo, eliminarTomo, cambiarPrecioYStockTomo } from "../utils/catalogoMangas";
+import { agregarTomo, eliminarTomo, editarTomo } from "../utils/catalogoMangas";
 
 const tomoVacio = { precio: "", stock: "", img: "" };
 
@@ -19,15 +19,25 @@ function ModalTomosAdmin({ manga, alCerrar, alCambiar }) {
         setNuevoTomo({ ...nuevoTomo, [e.target.name]: e.target.value });
     }
 
-    function manejarGuardar(tomo, precio, stock) {
-        cambiarPrecioYStockTomo(manga.id, tomo, precio, stock);
-        alCambiar();
+    // Llama al backend; si sale bien avisa a AdminMangas para que recargue, si falla muestra el error
+    async function ejecutar(accion) {
+        try {
+            await accion();
+            setError("");
+            alCambiar();
+        } catch (err) {
+            setError(err.message);
+        }
+    }
+
+    // datos: { precio, stock, img } (viene desde FilaTomoAdmin)
+    function manejarGuardar(tomo, datos) {
+        ejecutar(() => editarTomo(manga.id, tomo, datos));
     }
 
     function manejarEliminar(tomo) {
-        if (window.confirm(`¿Eliminar el Vol. ${tomo}? (esto sí es permanente; puedes volver a agregarlo abajo)`)) {
-            eliminarTomo(manga.id, tomo);
-            alCambiar();
+        if (window.confirm(`¿Eliminar el Vol. ${tomo}? Si fue un error, puedes volver a agregarlo abajo y tendrá el mismo número.`)) {
+            ejecutar(() => eliminarTomo(manga.id, tomo));
         }
     }
 
@@ -38,8 +48,8 @@ function ModalTomosAdmin({ manga, alCerrar, alCambiar }) {
         const stock = Number(nuevoTomo.stock);
         const img = nuevoTomo.img.trim();
 
-        if (nuevoTomo.precio === "" || nuevoTomo.stock === "" || precio < 0 || stock < 0 || !Number.isInteger(stock)) {
-            setError("Precio y stock deben ser números válidos (0 o más).");
+        if (nuevoTomo.precio === "" || nuevoTomo.stock === "" || precio <= 0 || stock < 0 || !Number.isInteger(stock)) {
+            setError("El precio debe ser mayor a 0 y el stock un número entero (0 o más).");
             return;
         }
         if (!img) {
@@ -47,10 +57,10 @@ function ModalTomosAdmin({ manga, alCerrar, alCambiar }) {
             return;
         }
 
-        agregarTomo(manga.id, { precio, stock, img });
-        setNuevoTomo(tomoVacio);
-        setError("");
-        alCambiar();
+        ejecutar(async () => {
+            await agregarTomo(manga.id, { precio, stock, img });
+            setNuevoTomo(tomoVacio);
+        });
     }
 
     return (
@@ -68,17 +78,20 @@ function ModalTomosAdmin({ manga, alCerrar, alCambiar }) {
                                         <th>Tomo</th>
                                         <th>Precio</th>
                                         <th>Stock</th>
+                                        <th>Imagen</th>
                                         <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {manga.volumenes.length === 0 && (
                                         <tr>
-                                            <td colSpan="4" className="text-center text-muted">Este manga no tiene tomos.</td>
+                                            <td colSpan="5" className="text-center text-muted">Este manga no tiene tomos.</td>
                                         </tr>
                                     )}
                                     {manga.volumenes.map(volumen => (
-                                        <FilaTomoAdmin key={volumen.tomo} volumen={volumen} alGuardar={manejarGuardar} alEliminar={manejarEliminar} />
+                                        <FilaTomoAdmin key={volumen.tomo} volumen={volumen}
+                                                       esUltimo={volumen.tomo === Math.max(...manga.volumenes.map(v => v.tomo))}
+                                                       alGuardar={manejarGuardar} alEliminar={manejarEliminar} />
                                     ))}
                                 </tbody>
                             </table>

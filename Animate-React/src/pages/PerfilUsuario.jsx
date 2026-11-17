@@ -314,7 +314,7 @@ function Perfil() {
                                     <tbody>
                                         {misCompras.map(c => (
                                             <tr key={c.id}>
-                                                <td>{c.fecha}</td><td>{formatearFecha(c.fecha)}</td>
+                                                <td>{formatearFecha(c.fecha)}</td>
                                                 <td>
                                                     {c.productos.map((p, i) => (
                                                         <div key={i}>

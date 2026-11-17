@@ -40,6 +40,14 @@ export function obtenerVentas() {
     return api("/pedidos");
 }
 
+// Siguiente estado permitido de un pedido. El backend aplica la misma regla.
+export const SIGUIENTE_ESTADO = { CONFIRMADO: "ENVIADO", ENVIADO: "ENTREGADO" };
+
+// Solo ADMIN. Devuelve el pedido ya actualizado.
+export function cambiarEstadoPedido(id, estado) {
+    return api(`/pedidos/${id}/estado`, { metodo: "PUT", cuerpo: { estado } });
+}
+
 // El backend envía la fecha en formato ISO ("2026-11-15T03:44:00Z")
 export function formatearFecha(fechaIso) {
     return new Date(fechaIso).toLocaleString("es-CL");

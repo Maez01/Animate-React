@@ -14,6 +14,17 @@ function ModalGaleriaAdmin({ figura, alCerrar, alCambiar }) {
         alCerrar();
     }
 
+    // Llama al backend; si sale bien avisa a AdminFiguras para que recargue, si falla muestra el error
+    async function ejecutar(accion) {
+        try {
+            await accion();
+            setError("");
+            alCambiar();
+        } catch (err) {
+            setError(err.message);
+        }
+    }
+
     function manejarAgregar(e) {
         e.preventDefault();
         const ruta = nuevaImagen.trim();
@@ -27,16 +38,15 @@ function ModalGaleriaAdmin({ figura, alCerrar, alCambiar }) {
             return;
         }
 
-        agregarImagenGaleria(figura.id, ruta);
-        setNuevaImagen("");
-        setError("");
-        alCambiar();
+        ejecutar(async () => {
+            await agregarImagenGaleria(figura.id, ruta);
+            setNuevaImagen("");
+        });
     }
 
     function manejarEliminar(ruta) {
         if (window.confirm("¿Quitar esta imagen de la galería?")) {
-            eliminarImagenGaleria(figura.id, ruta);
-            alCambiar();
+            ejecutar(() => eliminarImagenGaleria(figura.id, ruta));
         }
     }
 
@@ -67,14 +77,14 @@ function ModalGaleriaAdmin({ figura, alCerrar, alCambiar }) {
                             ))}
                         </div>
                         <p className="small text-muted">
-                            La portada siempre aparece primero en la galería. Se cambia desde los datos de la figura, no desde aquí.
+                            La portada siempre aparece primero en la galería. Se cambia con el botón "Editar" de la figura, no desde aquí.
                         </p>
 
                         <h6 className="fw-bold">Agregar imagen</h6>
                         <form className="row g-2" onSubmit={manejarAgregar} noValidate>
                             <div className="col-md-9">
                                 <input type="text" className="form-control" placeholder="Ej: /Imagenes/Figuras/foto2.webp"
-                                    value={nuevaImagen} onChange={e => setNuevaImagen(e.target.value)} />
+                                       value={nuevaImagen} onChange={e => setNuevaImagen(e.target.value)} />
                             </div>
                             <div className="col-md-3">
                                 <button type="submit" className="btn btn-primary w-100 fw-bold">Agregar</button>

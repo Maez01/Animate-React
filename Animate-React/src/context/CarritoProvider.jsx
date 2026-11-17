@@ -8,7 +8,6 @@ import {
     contarItems,
 } from "../utils/carrito";
 import { formatearPrecio } from "../utils/formatoPrecio";
-import { obtenerStock, descontarStock } from "../utils/inventario";
 import { registrarVenta } from "../utils/ventas";
 import { useAuth } from "./authContext";
 
@@ -28,7 +27,7 @@ function CarritoProvider({ children }) {
     }, [carrito]);
 
     function agregar(producto) {
-        const resultado = agregarItem(carrito, producto, obtenerStock(producto));
+        const resultado = agregarItem(carrito, producto, producto.stock);
         if (resultado.error) {
             alert(resultado.error);
             return false;
@@ -40,7 +39,7 @@ function CarritoProvider({ children }) {
     function cambiarCantidad(clave, delta) {
         const item = carrito.find(p => p.clave === clave);
         if (!item) return;
-        const resultado = cambiarCantidadItem(carrito, clave, delta, obtenerStock(item));
+        const resultado = cambiarCantidadItem(carrito, clave, delta, item.stock);
         if (resultado.error) {
             alert(resultado.error);
             return;
@@ -76,8 +75,6 @@ function CarritoProvider({ children }) {
                try {
                    // El backend confirma precios y stock, descuenta el inventario y guarda el pedido
                    const pedido = await registrarVenta(carrito, tarjeta, direccion, Boolean(usuario));
-                   // TEMPORAL: también se descuenta en el catálogo local hasta que se conecte el catálogo
-                   descontarStock(carrito);
                    setCarrito([]);
                    alert("¡Gracias por tu compra! Total: " + formatearPrecio(pedido.total));
                    return true;

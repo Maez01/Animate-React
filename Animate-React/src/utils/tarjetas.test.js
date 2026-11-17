@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { api } from "../services/api";
 import {
     validarTarjeta,
     resumirTarjeta,
@@ -8,10 +9,15 @@ import {
     agregarTarjeta,
     eliminarTarjeta,
     seleccionarTarjeta,
-    cambiarCorreoTarjetas,
 } from "./tarjetas";
 
-const correo = "ana@email.com";
+// La conexión con el backend se reemplaza por una función simulada
+vi.mock("../services/api", () => ({ api: vi.fn() }));
+
+beforeEach(() => {
+    api.mockReset();
+    api.mockResolvedValue({});
+});
 const tarjeta = (id) => ({ id, ultimos4: String(id).padStart(4, "0"), propietario: "Ana" });
 
 describe("validar y resumir tarjetas", () => {
@@ -49,64 +55,40 @@ describe("validar y resumir tarjetas", () => {
     });
 });
 
-describe("tarjetas de un usuario", () => {
-    it("sin tarjetas no hay ninguna seleccionada", () => {
-        expect(obtenerTarjetas(correo)).toEqual([]);
-        expect(obtenerSeleccionada(correo)).toBeNull();
+describe("tarjetas del usuario con sesión (backend)", () => {
+    it("obtenerTarjetas pide la lista al backend", async () => {
+        api.mockResolvedValue([tarjeta(1), tarjeta(2)]);
+
+        expect(await obtenerTarjetas()).toHaveLength(2);
+        expect(api).toHaveBeenCalledWith("/tarjetas");
     });
 
-    it("la primera tarjeta agregada queda seleccionada, y el correo no distingue mayúsculas", () => {
-        agregarTarjeta(correo, tarjeta(1));
-        agregarTarjeta("ANA@email.com", tarjeta(2));
+    it("obtenerSeleccionada devuelve la tarjeta marcada por el backend", async () => {
+        api.mockResolvedValue([tarjeta(1), { ...tarjeta(2), seleccionada: true }]);
 
-        expect(obtenerTarjetas(correo)).toHaveLength(2);
-        expect(obtenerSeleccionada(correo).id).toBe(1);
+        expect((await obtenerSeleccionada()).id).toBe(2);
     });
 
-    it("permite elegir otra tarjeta", () => {
-        agregarTarjeta(correo, tarjeta(1));
-        agregarTarjeta(correo, tarjeta(2));
+    it("obtenerSeleccionada devuelve null si ninguna está seleccionada", async () => {
+        api.mockResolvedValue([tarjeta(1)]);
 
-        seleccionarTarjeta(correo, 2);
-        expect(obtenerSeleccionada(correo).id).toBe(2);
+        expect(await obtenerSeleccionada()).toBeNull();
     });
 
-    it("al eliminar la seleccionada pasa a la primera que quede, o a ninguna", () => {
-        agregarTarjeta(correo, tarjeta(1));
-        agregarTarjeta(correo, tarjeta(2));
-        seleccionarTarjeta(correo, 2);
+    it("agregarTarjeta envía los datos sin espacios sobrantes", async () => {
+        await agregarTarjeta({ numero: " 1234 5678 9012 3456 ", clave: "123", propietario: "  Ana  " });
 
-        eliminarTarjeta(correo, 2);
-        expect(obtenerSeleccionada(correo).id).toBe(1);
-
-        eliminarTarjeta(correo, 1);
-        expect(obtenerSeleccionada(correo)).toBeNull();
+        expect(api).toHaveBeenCalledWith("/tarjetas", {
+            metodo: "POST",
+            cuerpo: { numero: "1234 5678 9012 3456", clave: "123", propietario: "Ana" },
+        });
     });
 
-    it("eliminar una tarjeta que no está seleccionada mantiene la selección", () => {
-        agregarTarjeta(correo, tarjeta(1));
-        agregarTarjeta(correo, tarjeta(2));
+    it("eliminarTarjeta y seleccionarTarjeta usan el id en la ruta", async () => {
+        await eliminarTarjeta(5);
+        await seleccionarTarjeta(7);
 
-        eliminarTarjeta(correo, 2);
-        expect(obtenerSeleccionada(correo).id).toBe(1);
-    });
-
-    it("traspasa las tarjetas al cambiar de correo", () => {
-        agregarTarjeta(correo, tarjeta(1));
-
-        cambiarCorreoTarjetas(correo, "ana.nueva@email.com");
-
-        expect(obtenerTarjetas(correo)).toHaveLength(0);
-        expect(obtenerTarjetas("ana.nueva@email.com")).toHaveLength(1);
-    });
-
-    it("no hace nada si el correo es el mismo o si no tenía tarjetas", () => {
-        agregarTarjeta(correo, tarjeta(1));
-
-        cambiarCorreoTarjetas(correo, "ANA@EMAIL.COM");
-        cambiarCorreoTarjetas("nadie@email.com", "otro@email.com");
-
-        expect(obtenerTarjetas(correo)).toHaveLength(1);
-        expect(obtenerTarjetas("otro@email.com")).toHaveLength(0);
+        expect(api).toHaveBeenNthCalledWith(1, "/tarjetas/5", { metodo: "DELETE" });
+        expect(api).toHaveBeenNthCalledWith(2, "/tarjetas/7/seleccionar", { metodo: "PUT" });
     });
 });

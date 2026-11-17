@@ -1,138 +1,88 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { api } from "../services/api";
 import {
     obtenerCatalogoCompleto,
-    guardarCatalogo,
-    obtenerVolumen,
-    descontarStockTomo,
     obtenerPapelera,
     agregarManga,
+    editarManga,
     eliminarManga,
     restaurarManga,
     agregarTomo,
     eliminarTomo,
-    cambiarPrecioYStockTomo,
+    editarTomo,
 } from "./catalogoMangas";
-import { baseDatosMangas } from "../data/mangas";
 
-const primero = baseDatosMangas[0];
-const tituloOriginal = primero.titulo;
-const buscarManga = id => obtenerCatalogoCompleto().find(m => m.id === id);
+// La conexión con el backend se reemplaza por una función simulada
+vi.mock("../services/api", () => ({ api: vi.fn() }));
 
-const mangaNuevo = {
-    titulo: "Manga de prueba",
-    genero: "shonen",
-    sinopsis: "Una sinopsis de prueba.",
-    imgPortada: "/Imagenes/Mangas/prueba.jpg",
-    precio: 9990,
-    stock: 4,
-};
+beforeEach(() => {
+    api.mockReset();
+    api.mockResolvedValue({});
+});
 
-describe("catálogo de mangas", () => {
-    it("la primera vez copia los mangas sin tocar los datos originales", () => {
-        const catalogo = obtenerCatalogoCompleto();
-        expect(catalogo).toHaveLength(baseDatosMangas.length);
+describe("lectura del catálogo de mangas", () => {
+    it("obtenerCatalogoCompleto pide los mangas activos al backend", async () => {
+        api.mockResolvedValue([{ id: 1, titulo: "BOCCHI THE ROCK" }]);
 
-        catalogo[0].titulo = "TÍTULO CAMBIADO";
-        expect(baseDatosMangas[0].titulo).toBe(tituloOriginal);
+        expect(await obtenerCatalogoCompleto()).toEqual([{ id: 1, titulo: "BOCCHI THE ROCK" }]);
+        expect(api).toHaveBeenCalledWith("/mangas");
     });
 
-    it("guardarCatalogo deja los cambios guardados en localStorage", () => {
-        const catalogo = obtenerCatalogoCompleto();
-        catalogo[0].vistas = 1;
-        guardarCatalogo(catalogo);
+    it("obtenerPapelera pide los mangas eliminados", async () => {
+        await obtenerPapelera();
 
-        expect(obtenerCatalogoCompleto()[0].vistas).toBe(1);
-    });
-
-    it("obtenerVolumen encuentra un tomo y devuelve null si no existe", () => {
-        expect(obtenerVolumen(primero.id, 1)).toEqual(primero.volumenes[0]);
-        expect(obtenerVolumen(primero.id, 999)).toBeNull();
-        expect(obtenerVolumen(999, 1)).toBeNull();
-    });
-
-    it("descontarStockTomo resta lo comprado y nunca baja de cero", () => {
-        const stockInicial = primero.volumenes[0].stock;
-
-        descontarStockTomo(primero.id, 1, 1);
-        expect(obtenerVolumen(primero.id, 1).stock).toBe(stockInicial - 1);
-
-        descontarStockTomo(primero.id, 1, 9999);
-        expect(obtenerVolumen(primero.id, 1).stock).toBe(0);
+        expect(api).toHaveBeenCalledWith("/mangas/papelera");
     });
 });
 
 describe("administración de mangas", () => {
-    it("agrega un manga nuevo con su tomo 1", () => {
-        const creado = agregarManga(mangaNuevo);
+    it("agregarManga envía los datos del manga y de su tomo 1", async () => {
+        const datos = { titulo: "Nuevo", genero: "shonen", sinopsis: "x", imgPortada: "/a.jpg", precio: 9990, stock: 3 };
 
-        expect(buscarManga(creado.id).titulo).toBe("Manga de prueba");
-        expect(creado.vistas).toBe(0);
-        expect(creado.volumenes).toEqual([
-            { tomo: 1, precio: 9990, stock: 4, img: mangaNuevo.imgPortada },
-        ]);
+        await agregarManga(datos);
+
+        expect(api).toHaveBeenCalledWith("/mangas", { metodo: "POST", cuerpo: datos });
     });
 
-    it("el id nuevo no choca con un manga que está en la papelera", () => {
-        const ultimoId = Math.max(...baseDatosMangas.map(m => m.id));
-        eliminarManga(ultimoId);
+    it("editarManga envía los datos generales con PUT", async () => {
+        const datos = { titulo: "Corregido", genero: "seinen", sinopsis: "y", imgPortada: "/b.jpg" };
 
-        const creado = agregarManga(mangaNuevo);
-        expect(creado.id).toBe(ultimoId + 1);
+        await editarManga(4, datos);
+
+        expect(api).toHaveBeenCalledWith("/mangas/4", { metodo: "PUT", cuerpo: datos });
     });
 
-    it("eliminar manda el manga a la papelera y restaurar lo devuelve", () => {
-        eliminarManga(primero.id);
-        expect(buscarManga(primero.id)).toBeUndefined();
-        expect(obtenerPapelera().map(m => m.id)).toContain(primero.id);
+    it("eliminarManga lo manda a la papelera y restaurarManga lo devuelve", async () => {
+        await eliminarManga(4);
+        await restaurarManga(4);
 
-        restaurarManga(primero.id);
-        expect(buscarManga(primero.id)).toBeDefined();
-        expect(obtenerPapelera()).toHaveLength(0);
-    });
-
-    it("eliminar o restaurar un id que no existe no cambia nada", () => {
-        eliminarManga(999);
-        restaurarManga(999);
-
-        expect(obtenerCatalogoCompleto()).toHaveLength(baseDatosMangas.length);
-        expect(obtenerPapelera()).toHaveLength(0);
+        expect(api).toHaveBeenNthCalledWith(1, "/mangas/4", { metodo: "DELETE" });
+        expect(api).toHaveBeenNthCalledWith(2, "/mangas/4/restaurar", { metodo: "PUT" });
     });
 });
 
 describe("administración de tomos", () => {
-    it("agrega un tomo con el número siguiente al último", () => {
-        const ultimoTomo = Math.max(...primero.volumenes.map(v => v.tomo));
-        agregarTomo(primero.id, { precio: 15990, stock: 6, img: "/Imagenes/Mangas/nuevo.jpg" });
+    it("agregarTomo envía precio, stock e imagen (el número lo asigna el backend)", async () => {
+        await agregarTomo(4, { precio: 9990, stock: 2, img: "/t5.jpg" });
 
-        expect(buscarManga(primero.id).volumenes.at(-1)).toEqual({
-            tomo: ultimoTomo + 1,
-            precio: 15990,
-            stock: 6,
-            img: "/Imagenes/Mangas/nuevo.jpg",
-        });
+        expect(api).toHaveBeenCalledWith("/mangas/4/tomos", { metodo: "POST", cuerpo: { precio: 9990, stock: 2, img: "/t5.jpg" } });
     });
 
-    it("elimina solo el tomo indicado", () => {
-        eliminarTomo(primero.id, 1);
+    it("editarTomo envía precio, stock e imagen del tomo indicado", async () => {
+        await editarTomo(4, 2, { precio: 12990, stock: 0, img: "/t2.jpg" });
 
-        const numeros = buscarManga(primero.id).volumenes.map(v => v.tomo);
-        expect(numeros).not.toContain(1);
-        expect(numeros).toHaveLength(primero.volumenes.length - 1);
+        expect(api).toHaveBeenCalledWith("/mangas/4/tomos/2", { metodo: "PUT", cuerpo: { precio: 12990, stock: 0, img: "/t2.jpg" } });
     });
 
-    it("cambia el precio y el stock de un tomo", () => {
-        cambiarPrecioYStockTomo(primero.id, 2, 12990, 10);
+    it("eliminarTomo usa el número del tomo en la ruta", async () => {
+        await eliminarTomo(4, 5);
 
-        expect(obtenerVolumen(primero.id, 2)).toMatchObject({ precio: 12990, stock: 10 });
+        expect(api).toHaveBeenCalledWith("/mangas/4/tomos/5", { metodo: "DELETE" });
     });
 
-    it("ignora mangas o tomos que no existen sin modificar el catálogo", () => {
-        agregarTomo(999, { precio: 1, stock: 1, img: "/x.jpg" });
-        eliminarTomo(999, 1);
-        cambiarPrecioYStockTomo(999, 1, 1, 1);
-        cambiarPrecioYStockTomo(primero.id, 999, 1, 1);
-        descontarStockTomo(999, 1, 1);
+    it("si el backend rechaza el cambio, el error llega al panel", async () => {
+        api.mockRejectedValue(new Error("El precio debe ser mayor a 0"));
 
-        expect(obtenerCatalogoCompleto()).toEqual(baseDatosMangas);
+        await expect(editarTomo(4, 2, { precio: 0, stock: 1, img: "/t2.jpg" })).rejects.toThrow("El precio debe ser mayor a 0");
     });
 });

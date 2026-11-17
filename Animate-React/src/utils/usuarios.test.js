@@ -1,15 +1,16 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { api, iniciarSesion } from "../services/api";
 import {
-    obtenerTodosUsuarios,
-    guardarSesion,
-    obtenerSesion,
-    obtenerUsuario,
-    cerrarSesion,
+    soloLetras,
+    formatoCorreo,
     validarRegistro,
     registrarUsuario,
-    actualizarUsuario,
-    buscarUsuario,
+    confirmarContrasenia,
+    editarMiPerfil,
 } from "./usuarios";
+
+// La conexión con el backend se reemplaza por funciones simuladas
+vi.mock("../services/api", () => ({ api: vi.fn(), iniciarSesion: vi.fn() }));
 
 const datosValidos = {
     nombre: "María José",
@@ -18,41 +19,38 @@ const datosValidos = {
     contrasenia: "ClaveSegura#2026",
 };
 
-describe("lista de usuarios y sesión", () => {
-    it("parte con los dos usuarios de ejemplo y entrega una copia", () => {
-        const usuarios = obtenerTodosUsuarios();
-        expect(usuarios.map(u => u.correo)).toEqual(["ana@email.com", "carlos@email.com"]);
+beforeEach(() => {
+    api.mockReset();
+    api.mockResolvedValue({});
+    iniciarSesion.mockReset();
+    iniciarSesion.mockResolvedValue({});
+});
 
-        usuarios.push({ nombre: "Intruso" });
-        expect(obtenerTodosUsuarios()).toHaveLength(2);
+describe("expresiones de validación", () => {
+    it("soloLetras acepta tildes, ñ y espacios, pero no números", () => {
+        expect(soloLetras.test("María Peña")).toBe(true);
+        expect(soloLetras.test("Ana1")).toBe(false);
     });
 
-    it("guarda la sesión sin la contraseña, la lee y la cierra", () => {
-        const ana = obtenerTodosUsuarios()[0];
-        guardarSesion(ana);
-
-        expect(obtenerSesion()).toEqual({ nombre: "Ana", apellido: "Gonzales", correo: "ana@email.com", rol: "Admin" });
-        expect(obtenerSesion()).not.toHaveProperty("contrasenia");
-        expect(obtenerUsuario()).toEqual(obtenerSesion());
-
-        cerrarSesion();
-        expect(obtenerSesion()).toBeNull();
-        expect(obtenerUsuario()).toBeNull();
+    it("formatoCorreo exige usuario, @ y dominio", () => {
+        expect(formatoCorreo.test("ana@email.com")).toBe(true);
+        expect(formatoCorreo.test("ana@email")).toBe(false);
+        expect(formatoCorreo.test("ana email.com")).toBe(false);
     });
 });
 
 describe("validarRegistro", () => {
     it("acepta datos correctos, con tildes y espacios", () => {
-        expect(validarRegistro(datosValidos, obtenerTodosUsuarios())).toEqual({});
+        expect(validarRegistro(datosValidos)).toEqual({});
     });
 
     it("informa los cuatro campos vacíos a la vez", () => {
-        const errores = validarRegistro({ nombre: "", apellido: "", correo: "", contrasenia: "" }, []);
+        const errores = validarRegistro({ nombre: "", apellido: "", correo: "", contrasenia: "" });
         expect(Object.keys(errores)).toEqual(["nombre", "apellido", "correo", "contrasenia"]);
     });
 
     it("rechaza números en nombre y apellido, y un correo sin formato", () => {
-        const errores = validarRegistro({ ...datosValidos, nombre: "Ana1", apellido: "Pérez2", correo: "malo" }, []);
+        const errores = validarRegistro({ ...datosValidos, nombre: "Ana1", apellido: "Pérez2", correo: "malo" });
 
         expect(errores.nombre).toBe("El nombre solo debe contener letras");
         expect(errores.apellido).toBe("El apellido solo debe contener letras");
@@ -64,45 +62,49 @@ describe("validarRegistro", () => {
         ["sinmayuscula#123", "La contraseña debe tener al menos una mayúscula"],
         ["SinEspecial12345", "La contraseña debe tener al menos un carácter especial (# $ % & *)"],
     ])("rechaza la contraseña %s", (contrasenia, mensaje) => {
-        expect(validarRegistro({ ...datosValidos, contrasenia }, []).contrasenia).toBe(mensaje);
-    });
-
-    it("detecta datos ya registrados sin importar las mayúsculas", () => {
-        const errores = validarRegistro(
-            { ...datosValidos, nombre: "ANA", apellido: "gonzales", correo: "Carlos@Email.com" },
-            obtenerTodosUsuarios()
-        );
-
-        expect(errores).toEqual({
-            nombre: "Ese nombre ya está registrado",
-            apellido: "Ese apellido ya está registrado",
-            correo: "Ese correo ya está registrado",
-        });
+        expect(validarRegistro({ ...datosValidos, contrasenia }).contrasenia).toBe(mensaje);
     });
 });
 
-describe("registro, login y edición de perfil", () => {
-    it("registra un usuario nuevo con rol Usuario y permite encontrarlo", () => {
-        registrarUsuario(datosValidos);
+describe("registro y perfil con el backend", () => {
+    it("registrarUsuario envía los datos a /auth/registro", async () => {
+        api.mockResolvedValue({ id: 3, ...datosValidos, rol: "USUARIO" });
 
-        expect(obtenerTodosUsuarios().at(-1).rol).toBe("Usuario");
-        expect(buscarUsuario("MARIA@email.com", "ClaveSegura#2026").nombre).toBe("María José");
+        const creado = await registrarUsuario(datosValidos);
+
+        expect(api).toHaveBeenCalledWith("/auth/registro", { metodo: "POST", cuerpo: datosValidos });
+        expect(creado.rol).toBe("USUARIO");
     });
 
-    it("no encuentra al usuario con una contraseña incorrecta", () => {
-        expect(buscarUsuario("ana@email.com", "incorrecta")).toBeNull();
+    it("si el correo ya existe, el error del backend llega al formulario", async () => {
+        api.mockRejectedValue(Object.assign(new Error("Ese correo ya está registrado"), { status: 409 }));
+
+        await expect(registrarUsuario(datosValidos)).rejects.toMatchObject({ status: 409 });
     });
 
-    it("actualiza los datos del usuario y su sesión", () => {
-        actualizarUsuario("carlos@email.com", {
+    it("confirmarContrasenia comprueba la contraseña con el mismo login del backend", async () => {
+        await confirmarContrasenia("ana@email.com", "AdminAnimate#1");
+
+        expect(iniciarSesion).toHaveBeenCalledWith("ana@email.com", "AdminAnimate#1");
+    });
+
+    it("confirmarContrasenia falla si la contraseña es incorrecta", async () => {
+        iniciarSesion.mockRejectedValue(Object.assign(new Error("Correo o contraseña incorrectos."), { status: 401 }));
+
+        await expect(confirmarContrasenia("ana@email.com", "incorrecta")).rejects.toMatchObject({ status: 401 });
+    });
+
+    it("editarMiPerfil envía los cambios a /usuarios/me", async () => {
+        const cambios = {
             nombre: "Carlitos",
             apellido: "Calderon",
             correo: "carlitos@email.com",
-            contrasenia: "Carlos#Laraña1",
-        });
+            contraseniaActual: "Carlos#Laraña1",
+            contraseniaNueva: null,
+        };
 
-        expect(obtenerSesion()).toMatchObject({ nombre: "Carlitos", correo: "carlitos@email.com" });
-        expect(buscarUsuario("carlitos@email.com", "Carlos#Laraña1")).not.toBeNull();
-        expect(obtenerTodosUsuarios()).toHaveLength(2);
+        await editarMiPerfil(cambios);
+
+        expect(api).toHaveBeenCalledWith("/usuarios/me", { metodo: "PUT", cuerpo: cambios });
     });
 });

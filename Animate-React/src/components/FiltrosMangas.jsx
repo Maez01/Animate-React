@@ -1,16 +1,8 @@
 import { Container, Row, Col, Form } from "react-bootstrap";
+import { GENEROS_MANGA } from "../utils/generosManga";
 
-const GENEROS = [
-    { valor: "todos", texto: "Todos los géneros" },
-    { valor: "shonen", texto: "Shonen" },
-    { valor: "seinen", texto: "Seinen" },
-    { valor: "shojo", texto: "Shojo" },
-    { valor: "slice of life", texto: "Slice of Life" },
-    { valor: "fantasia", texto: "Fantasía" },
-    { valor: "terror", texto: "Terror" },
-    { valor: "josei", texto: "Josei" },
-    { valor: "isekai", texto: "Isekai" },
-];
+// El filtro agrega la opción "todos" a la lista común de géneros
+const GENEROS = [{ valor: "todos", texto: "Todos los géneros" }, ...GENEROS_MANGA];
 
 function FiltrosMangas({ filtros, alCambiar }) {
     return (
