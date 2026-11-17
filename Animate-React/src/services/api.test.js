@@ -12,7 +12,7 @@ import {
 const URL = "http://localhost:8080/api";
 
 const usuarioAna = { id: 1, nombre: "Ana", apellido: "Gonzales", correo: "ana@email.com", rol: "ADMIN" };
-const sesion = (token) => ({ accessToken: token, expiresIn: 900, usuario: usuarioAna });
+const sesion = (token, refresh) => ({ accessToken: token, expiresIn: 900, usuario: usuarioAna, refreshToken: refresh });
 
 // Arma una respuesta falsa del servidor, con la misma forma que la de fetch
 function respuesta(status, cuerpo) {
@@ -31,6 +31,7 @@ beforeEach(async () => {
     vi.stubGlobal("fetch", fetchFalso);
 
     // api.js recuerda la sesión entre pruebas: se cierra para partir siempre sin sesión
+    // (también borra el refresh token guardado en localStorage)
     await cerrarSesionApi();
     fetchFalso.mockReset();
 });
@@ -106,6 +107,53 @@ describe("sesión", () => {
         dejarDeEscuchar();
         await cerrarSesionApi();
         expect(oyente).toHaveBeenCalledTimes(1);
+    });
+
+    it("al iniciar sesión guarda el refresh token en el navegador y no lo envía en el login", async () => {
+        localStorage.setItem("animate_refresh", "refresh-viejo");
+        fetchFalso.mockResolvedValueOnce(respuesta(200, sesion("token-1", "refresh-1")));
+
+        await iniciarSesion("ana@email.com", "AdminAnimate#1");
+
+        expect(localStorage.getItem("animate_refresh")).toBe("refresh-1");
+        expect(fetchFalso.mock.calls[0][1].headers["X-Refresh-Token"]).toBeUndefined();
+    });
+
+    it("renovarSesion envía el refresh guardado en la cabecera y guarda el nuevo", async () => {
+        fetchFalso
+            .mockResolvedValueOnce(respuesta(200, sesion("token-1", "refresh-1")))
+            .mockResolvedValueOnce(respuesta(200, sesion("token-2", "refresh-2")));
+        await iniciarSesion("ana@email.com", "AdminAnimate#1");
+
+        await renovarSesion();
+
+        const [ruta, opciones] = fetchFalso.mock.calls[1];
+        expect(ruta).toBe(`${URL}/auth/refresh`);
+        expect(opciones.headers["X-Refresh-Token"]).toBe("refresh-1");
+        expect(localStorage.getItem("animate_refresh")).toBe("refresh-2");
+    });
+
+    it("si la renovación falla, borra el refresh guardado", async () => {
+        localStorage.setItem("animate_refresh", "refresh-vencido");
+        fetchFalso.mockResolvedValueOnce(respuesta(401, { status: 401, mensaje: "La sesión expiró. Inicia sesión nuevamente." }));
+
+        await expect(renovarSesion()).rejects.toMatchObject({ status: 401 });
+
+        expect(localStorage.getItem("animate_refresh")).toBeNull();
+    });
+
+    it("cerrarSesionApi envía el refresh al backend y lo borra del navegador", async () => {
+        fetchFalso
+            .mockResolvedValueOnce(respuesta(200, sesion("token-1", "refresh-1")))
+            .mockResolvedValueOnce(respuesta(204));
+        await iniciarSesion("ana@email.com", "AdminAnimate#1");
+
+        await cerrarSesionApi();
+
+        const [ruta, opciones] = fetchFalso.mock.calls[1];
+        expect(ruta).toBe(`${URL}/auth/logout`);
+        expect(opciones.headers["X-Refresh-Token"]).toBe("refresh-1");
+        expect(localStorage.getItem("animate_refresh")).toBeNull();
     });
 });
 
@@ -186,16 +234,17 @@ describe("llamadas a la API", () => {
 describe("token vencido", () => {
     it("lo renueva una vez y repite la llamada con el token nuevo", async () => {
         fetchFalso
-            .mockResolvedValueOnce(respuesta(200, sesion("token-1")))   // login
-            .mockResolvedValueOnce(respuesta(401))                       // token vencido
-            .mockResolvedValueOnce(respuesta(200, sesion("token-2")))   // renovación con la cookie
-            .mockResolvedValueOnce(respuesta(200, [{ id: 1 }]));         // se repite la llamada
+            .mockResolvedValueOnce(respuesta(200, sesion("token-1", "refresh-1")))   // login
+            .mockResolvedValueOnce(respuesta(401))                                    // token vencido
+            .mockResolvedValueOnce(respuesta(200, sesion("token-2", "refresh-2")))   // renovación con el refresh
+            .mockResolvedValueOnce(respuesta(200, [{ id: 1 }]));                      // se repite la llamada
         await iniciarSesion("ana@email.com", "AdminAnimate#1");
 
         const datos = await api("/pedidos/mios");
 
         expect(datos).toEqual([{ id: 1 }]);
         expect(fetchFalso.mock.calls[2][0]).toBe(`${URL}/auth/refresh`);
+        expect(fetchFalso.mock.calls[2][1].headers["X-Refresh-Token"]).toBe("refresh-1");
         expect(fetchFalso.mock.calls[3][1].headers.Authorization).toBe("Bearer token-2");
     });
 

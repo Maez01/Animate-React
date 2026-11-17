@@ -10,6 +10,27 @@ let accessToken = null;
 let usuarioActual = null;
 const oyentes = new Set();
 
+// Refresh token: en AWS el front (S3) y la API (EC2) están en dominios distintos y la
+// cookie no viaja. Por eso se guarda en el navegador y se envía en la cabecera X-Refresh-Token.
+const CLAVE_REFRESH = "animate_refresh";
+
+function leerRefresh(){
+    try {
+        return localStorage.getItem(CLAVE_REFRESH);
+    } catch {
+        return null;
+    }
+}
+
+function guardarRefresh(valor){
+    try {
+        if (valor) localStorage.setItem(CLAVE_REFRESH, valor);
+        else localStorage.removeItem(CLAVE_REFRESH);
+    } catch {
+        // navegador sin almacenamiento disponible: la sesión solo dura hasta recargar
+    }
+}
+
 function avisarCambio(){
     oyentes.forEach(oyente => oyente(usuarioActual));
 }
@@ -17,12 +38,14 @@ function avisarCambio(){
 function guardarSesionApi(sesion){
     accessToken = sesion.accessToken;
     usuarioActual = sesion.usuario;
+    guardarRefresh(sesion.refreshToken);
     avisarCambio();
 }
 
 function limpiarSesionApi(){
     accessToken = null;
     usuarioActual = null;
+    guardarRefresh(null);
     avisarCambio();
 }
 
@@ -76,16 +99,25 @@ async function leerRespuesta(res){
         throw new ErrorApi(res.status, datos?.mensaje || mensajePorEstado(res.status), datos?.campos || {});
     }
     return datos;
+
 }
 
-// ---------- Autenticación (usa la cookie HttpOnly) ----------
+function cabecerasAuth(ruta){
+    const headers = { "Content-Type": "application/json", "X-Requested-With": "Animate" };
+    const refresh = leerRefresh();
+    if (refresh && ruta !== "login") headers["X-Refresh-Token"] = refresh;
+    return headers;
+}
+
+
+// ---------- Autenticación (refresh por cabecera en AWS, cookie HttpOnly en local) ----------
 async function llamarAuth(ruta, cuerpo) {
     let res;
     try{
         res = await fetch(`${API_URL}/auth/${ruta}`, {
             method: "POST",
             credentials: "include",
-            headers: { "Content-Type": "application/json", "X-Requested-With": "Animate"},
+            headers: cabecerasAuth(ruta),
             body: cuerpo ? JSON.stringify(cuerpo): undefined,
         });
     } catch {
@@ -103,7 +135,7 @@ export async function iniciarSesion(correo, contrasenia) {
 
 
 // Si se piden dos renovaciones al mismo tiempo, ambas esperan la misma.
-// Así la cookie no se usa dos veces (el backend la cambia en cada renovación).
+// Así el refresh token no se usa dos veces (el backend lo cambia en cada renovación).
 
 let renovacionEnCurso = null;
 
@@ -166,18 +198,3 @@ export async function api(ruta, { metodo = "GET", cuerpo, cabeceras = {} } = {},
 
     return leerRespuesta(res);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
